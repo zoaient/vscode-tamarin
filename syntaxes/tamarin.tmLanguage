@@ -33,22 +33,23 @@
       <!-- key words -->
       <dict>
          <key>match</key>
-         <string>\b(equations|functions|builtins|protocol|property|theory|begin|end|subsection|section|text|rule|pb|lts|exists-trace|all-traces|enable|assertions|modulo|default_rules|anb-proto|in|let|Fresh|fresh|Public|public)\b</string>
+         <string>\b(equations|functions|builtins|protocol|property|begin|end|subsection|section|text|pb|lts|exists-trace|all-traces|enable|assertions|modulo|default_rules|anb-proto|in|let|Fresh|fresh|Public|public)\b</string>
          <key>name</key>
          <string>keyword.control</string>
       </dict>
 
       <dict>
          <key>match</key>
-         <string>\b(axiom|restriction|lemma|sources|use_induction|reuse|hide_lemma|left|right|builtins|protocol|property|subsection|section|text)\b</string>
+         <string>\b(axiom|restriction|sources|use_induction|reuse|hide_lemma|left|right|builtins|protocol|property|subsection|section|text)\b</string>
          <key>name</key>
          <string>keyword.control</string>
       </dict>
       
+       
 
       <dict>
          <key>match</key>
-         <string>\b(xor|aenc|adec|senc|sdec|sign|verify|Eq|eq|hashing|signing|revealing-signing|diffie-hellman|symmetric-encryption|asymmetric-encryption|multiset|bilinear-pairing|h|H|sk|pk|Fr|In|Out|IN|OUT)\b</string>
+         <string>\b(xor|aenc|adec|senc|sdec|sign|verify|Eq|eq|hashing|signing|revealing-signing|diffie-hellman|symmetric-encryption|asymmetric-encryption|multiset|bilinear-pairing|h|H|sk|pk|Fr|In|Out|IN|OUT|Ltk|Pk|K)\b</string>
          <key>name</key>
          <string>variable.language</string>
       </dict>
@@ -60,19 +61,14 @@
          <string>constant.numeric</string>
       </dict>
 
-      <!-- dict>
-         <key>match</key>
-         <string>([\w]+)(?:\([^\)]+\))</string>
-         <key>name</key>
-         <string>entity.name.function</string>
-      </dict -->
 
-      <dict>
+
+      <!--<dict>
          <key>match</key>
          <string>rule\s+([\w]+)[\s]*:</string>
          <key>name</key>
          <string>entity.name.tag</string>
-      </dict>
+      </dict>-->
       
       <dict>
          <key>match</key>
@@ -95,12 +91,66 @@
       
       <dict>
          <key>match</key>
-         <string>\b(F|T|All|Ex|not)\b|&amp;|\||==&gt;|=|==</string>
+         <string>\b(F|T|All|Ex|not)\b</string>
          <key>name</key>
          <string>constant.language</string>
       </dict>
-      
 
+      <dict>
+         <key>match</key>
+         <string>&amp;|\||==&gt;|=|==|#|\.|@|~|&gt;|&lt;</string>
+         <key>name</key>
+         <string>keyword.operator</string>
+      </dict>
+      
+      <dict>
+         <key>match</key>
+         <string>([\w]+)(?:\([^\)]+\))</string>
+         <key>captures</key>
+         <dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function</string>
+            </dict>
+         </dict>
+      </dict>
+
+      <dict>
+         <key>match</key>
+         <string>(rule|lemma)[\s]+(\w+)\s*:</string>
+         <key>captures</key>
+         <dict>
+            <key>1</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.control</string>
+            </dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function</string>
+            </dict>
+         </dict>
+      </dict>
+
+      <dict>
+         <key>match</key>
+         <string>(theory)[\s]+(\w+)</string>
+         <key>captures</key>
+         <dict>
+            <key>1</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.control</string>
+            </dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.section</string>
+            </dict>
+         </dict>
+      </dict>
       
    </array>
    <key>scopeName</key>
