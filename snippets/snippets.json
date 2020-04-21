@@ -29,12 +29,6 @@
 		"description": "Tamarin - Left",
 		"scope": "tamarin"
 	},
-	"lemma": {
-		"prefix": "lemma",
-		"body": "\nlemma $1:\n\"\n    \n\"\n",
-		"description": "Tamarin - Skeleton Lemma",
-		"scope": "tamarin"
-	},
 	"restriction": {
 		"prefix": "restriction",
 		"body": "\nrestriction $1:\n\"\n    \n\"\n",
@@ -53,12 +47,6 @@
 		"description": "Tamarin - Right",
 		"scope": "tamarin"
 	},
-	"rule": {
-		"prefix": "rule",
-		"body": "\nrule $1:\n  let\n    \n  in\n    [  ]\n  --[  ]->\n    [  ]\n",
-		"description": "Tamarin - Skeleton Rule",
-		"scope": "tamarin"
-	},
 	"sources": {
 		"prefix": "sources",
 		"body": "sources",
@@ -67,57 +55,45 @@
 	},
 	"theory": {
 		"prefix": "theory",
-		"body": "\n/*\n *  Author: Bob\n *  Model Name: $TM_FILENAME\n *  Status: DEVELOPMENTAL\n *\n *  Comments:\n */\n\ntheory $1\nbegin\n\nbuiltins: $2\nfunctions: $3\nequations: $4\n\n\n\nend\n",
+		"body": "\n/*\n *  Author: ${1:John Doe}\n *  Model Name: $TM_FILENAME\n *  Status: DEVELOPMENTAL\n *\n *  Comments:\n */\n\ntheory $2\nbegin\n\nbuiltins: $3\nfunctions: $4\nequations: $5\n\n\n\nend\n",
 		"description": "Tamarin - Skeleton Protocol Theory",
 		"scope": "tamarin"
 	},
-
-
-
-	"rule1": {
+	"rule simple": {
         "prefix": "rule",
         "body": [
-            "rule $1:",
-            "\t[ $2 ]\n\t--[\n\t\t\n\t]->\n\t[ $3 ]"
+            "rule ${1:rule_}:",
+            "\t[ $3 ]",
+            "\t--[  ]->",
+            "\t[ $4 ]"
         ],
-        "description": "Skeleton of a rule"
+        "description": "rule simple",
+		"scope": "tamarin"
     },
     "rule let in": {
         "prefix": "rule",
         "body": [
-            "rule $1:",
+            "rule ${1:rule_}:",
             "\tlet",
             "\t\t$2",
             "\tin",
             "\t[ $3 ]",
-            "\t--[",
-            "\t\t",
-            "\t]->",
+            "\t--[  ]->",
             "\t[ $4 ]"
         ],
-        "description": "Skeleton of a rule with `let ... in`"
+        "description": "rule complex `let ... in`",
+		"scope": "tamarin"
     },
-    "theory1": {
-        "prefix": "theory",
-        "body": [
-            "theory $1",
-            "begin",
-            "",
-            "$2",
-            "",
-            "end"
-        ],
-        "description": "Skeleton of a theory"
-    },
-    "lemma1": {
+    "lemma": {
         "prefix": "lemma",
         "body": [
-            "lemma $1:",
+            "lemma ${1:lemma_}:",
             "\"",
             "\t$2",
             "\""
         ],
-        "description": "Skeleton of a lemma"
+        "description": "Skeleton of a lemma",
+		"scope": "tamarin"
     },
     "sperate-comment":{
         "prefix": "cmts",
@@ -125,7 +101,8 @@
             "// $1",
             "//------------------------------------"
         ],
-        "description": "Skeleton of a block comment"
+        "description": "Skeleton of a block comment",
+		"scope": "tamarin"
     },
     "block-comment":{
         "prefix": "cmt",
@@ -134,7 +111,8 @@
             "/* $1 */",
             "/************************************/"
         ],
-        "description": "Skeleton of a block comment"
+        "description": "Skeleton of a block comment",
+		"scope": "tamarin"
     },
     "block-comment-1":{
         "prefix": "cmt1",
@@ -143,7 +121,8 @@
             "/* $1 */",
             "/***********************/"
         ],
-        "description": "Skeleton of a shrot block comment"
+        "description": "Skeleton of a shrot block comment",
+		"scope": "tamarin"
     },
     "block-comment-2":{
         "prefix": "cmt2",
@@ -152,7 +131,8 @@
             "/* $1 */",
             "/************************************/"
         ],
-        "description": "Skeleton of a medium length block comment"
+        "description": "Skeleton of a medium length block comment",
+		"scope": "tamarin"
     },
     "block-comment-3":{
         "prefix": "cmt3",
@@ -161,35 +141,37 @@
             "/* $1 */",
             "/*****************************************************/"
         ],
-        "description": "Skeleton of a long block comment"
+        "description": "Skeleton of a long block comment",
+		"scope": "tamarin"
     },
     "fresh": {
         "prefix": "f",
         "body":[
-            "Fr(~$1)"
+            "Fr(~${1:nonce})"
         ],
         "description": "Create a fresh nounce"
     },
     "pair": {
         "prefix": "pair",
         "body":[
-            "< $1, $2 >"
+            "< ${1:a}, ${2:b} >"
         ],
         "description": "Syntax sugar for pair(a, b)"
     },
     "in": {
-        "prefix": "i",
+        "prefix": "in",
         "body":[
             "In($1)"
         ],
         "description": "Accept a message from outer world, possibly forged by attacker"
     },
     "out": {
-        "prefix": "o",
+        "prefix": "out",
         "body":[
             "Out($1)"
         ],
-        "description": "Send message out, can be intercepted by attacker"
+        "description": "Send message out, can be intercepted by attacker",
+		"scope": "tamarin"
     },
     "init": {
         "prefix": "init",
@@ -197,14 +179,16 @@
             "rule init_$1:",
             "\t[ $2 ]\n\t--[\n\t\t\n\t]->\n\t[ $3 ]"
         ],
-        "description": "Skelton init rule"
+        "description": "Skelton init rule",
+		"scope": "tamarin"
     },
     "senc": {
-        "prefix": "se",
+        "prefix": "senc",
         "body": [
             "senc{<$1>}~key"
         ],
-        "description": "symmetrical encryption"
+        "description": "symmetrical encryption",
+		"scope": "tamarin"
     },
     "let in": {
         "prefix": "let",
@@ -213,30 +197,18 @@
             "\t\t$1", 
             "\tin"
         ],
-        "description": "Macro definition"
-    },
-    "all-traces1": {
-        "prefix": "all",
-        "body": [
-            "all-traces"
-        ],
-        "description": "Tamarin - All Traces"
-    },
-    "exists-trace1": {
-        "prefix": "exist",
-        "body":[
-            "exists-trace"
-        ],
-        "description": "Lemma proven once a trace is found"
+        "description": "Macro definition",
+		"scope": "tamarin"
     },
     "restrition": {
         "prefix": "restriction",
         "body":[
-            "restriction $1:",
+            "restriction ${1:restriction_}:",
             "\"",
             "\t$2",
             "\""
         ],
-        "description": "Skeleton of restriction, limit the explored state space"
+        "description": "Skeleton of restriction, limit the explored state space",
+		"scope": "tamarin"
     }
 }
