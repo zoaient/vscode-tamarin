@@ -21,7 +21,7 @@
         "grammars": [{
             "language": "tamarin",
             "scopeName": "source.tamarin",
-            "path": "./syntaxes/tamarin.tmLanguage"
+            "path": "./syntaxes/tamarin.tmLanguage.xml"
         }],
         "snippets": [
             {

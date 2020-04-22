@@ -33,7 +33,7 @@
       <!-- key words -->
       <dict>
          <key>match</key>
-         <string>\b(equations|functions|builtins|protocol|property|begin|end|subsection|section|text|pb|lts|exists-trace|all-traces|enable|assertions|modulo|default_rules|anb-proto|in|let|Fresh|fresh|Public|public)\b</string>
+         <string>\b(equations|builtins|functions|protocol|property|begin|end|subsection|section|text|pb|lts|exists-trace|all-traces|enable|assertions|modulo|default_rules|anb-proto|in|let|Fresh|fresh|Public|public)\b</string>
          <key>name</key>
          <string>keyword.control</string>
       </dict>
@@ -49,7 +49,7 @@
 
       <dict>
          <key>match</key>
-         <string>\b(xor|aenc|adec|senc|sdec|sign|verify|Eq|eq|hashing|signing|revealing-signing|diffie-hellman|symmetric-encryption|asymmetric-encryption|multiset|bilinear-pairing|h|H|sk|pk|Fr|In|Out|IN|OUT|Ltk|Pk|K)\b</string>
+         <string>\b(xor|aenc|adec|senc|sdec|sign|verify|Eq|eq|hashing|signing|revealing-signing|diffie-hellman|symmetric-encryption|asymmetric-encryption|multiset|bilinear-pairing|h|H|sk|pk|Fr|In|Out|K)\b</string>
          <key>name</key>
          <string>variable.language</string>
       </dict>
@@ -62,13 +62,6 @@
       </dict>
 
 
-
-      <!--<dict>
-         <key>match</key>
-         <string>rule\s+([\w]+)[\s]*:</string>
-         <key>name</key>
-         <string>entity.name.tag</string>
-      </dict>-->
       
       <dict>
          <key>match</key>
@@ -136,7 +129,7 @@
 
       <dict>
          <key>match</key>
-         <string>(theory)[\s]+(\w+)</string>
+         <string>\b(theory)\b\s+\b(\w+)\b</string>
          <key>captures</key>
          <dict>
             <key>1</key>
@@ -148,6 +141,29 @@
 				<dict>
 					<key>name</key>
 					<string>entity.name.section</string>
+            </dict>
+         </dict>
+      </dict>
+
+       <dict>
+         <key>match</key>
+         <string>\b(\w+)\b\/(\d+)\s*(?:\[(private)\])?</string>
+         <key>captures</key>
+         <dict>
+            <key>1</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function</string>
+            </dict>
+            <key>2</key>
+				<dict>
+					<key>name</key>
+					<string>constant.numeric</string>
+            </dict>
+            <key>3</key>
+				<dict>
+					<key>name</key>
+					<string>constant.language</string>
             </dict>
          </dict>
       </dict>
