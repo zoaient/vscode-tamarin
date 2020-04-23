@@ -40,13 +40,13 @@
 
       <dict>
          <key>match</key>
-         <string>\b(axiom|restriction|sources|use_induction|reuse|hide_lemma|left|right|builtins|protocol|property|subsection|section|text)\b</string>
+         <string>\b(axiom|builtins|protocol|property|subsection|section|text)\b</string>
          <key>name</key>
          <string>keyword.control</string>
       </dict>
       
        
-
+      <!-- sources|use_induction|reuse|hide_lemma|left|right -->
       <dict>
          <key>match</key>
          <string>\b(xor|aenc|adec|senc|sdec|sign|verify|Eq|eq|hashing|signing|revealing-signing|diffie-hellman|symmetric-encryption|asymmetric-encryption|multiset|bilinear-pairing|h|H|sk|pk|Fr|In|Out|K)\b</string>
@@ -91,14 +91,14 @@
 
       <dict>
          <key>match</key>
-         <string>&amp;|\||==&gt;|=|==|#|\.|@|~|&gt;|&lt;</string>
+         <string>\b(&amp;|\||==&gt;|=|==|#|\.|@|~|&gt;|&lt;|==&gt;)\b</string>
          <key>name</key>
          <string>keyword.operator</string>
       </dict>
       
       <dict>
          <key>match</key>
-         <string>([\w]+)(?:\([^\)]+\))</string>
+         <string>\b([\w]+)\b\s*\(</string>
          <key>captures</key>
          <dict>
 				<key>1</key>
@@ -111,7 +111,7 @@
 
       <dict>
          <key>match</key>
-         <string>(rule|lemma)[\s]+(\w+)\s*:</string>
+         <string>(rule|restriction)[\s]+(\w+)\s*:</string>
          <key>captures</key>
          <dict>
             <key>1</key>
@@ -123,6 +123,34 @@
 				<dict>
 					<key>name</key>
 					<string>entity.name.function</string>
+            </dict>
+         </dict>
+      </dict>
+
+      <dict>
+         <key>match</key>
+         <string>(lemma)\s+(\w+)\s*(?:\[(?:(sources|use_induction|reuse)|(?:(hide_lemma)=\w+))\])?\s*:</string>
+         <key>captures</key>
+         <dict>
+            <key>1</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.control</string>
+            </dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function</string>
+            </dict>
+            <key>3</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.control</string>
+            </dict>
+            <key>4</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.control</string>
             </dict>
          </dict>
       </dict>

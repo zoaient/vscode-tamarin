@@ -1,6 +1,13 @@
 *.visx
 *.vsix
-*.aes
-*.spthy
-img
-patching.md
+
+
+# Extra
+node_modules
+# Extension
+*.vsix
+out/
+
+# IDE
+.vscode/
+.vscode-test/
