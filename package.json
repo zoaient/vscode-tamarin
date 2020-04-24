@@ -1,6 +1,6 @@
 {
     "name": "tamarin",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "engines": {
         "vscode": "^1.44.0"
     },
@@ -45,8 +45,30 @@
         ],
         "commands": [
             {
-                "command": "extension.sayHello",
-                "title": "Hello World"
+                "command": "tamarin.checkSyntax",
+                "title": "Tamarin Check Syntax"
+            },
+            {
+                "command": "tamarin.checkSemantics",
+                "title": "Tamarin Check Semantics"
+            },
+            {
+                "command": "tamarin.runServer",
+                "title": "Tamarin Run Code in Server"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "tamarin.checkSyntax",
+                "key": "ctrl+alt+q"
+            },
+            {
+                "command": "tamarin.checkSemantics",
+                "key": "ctrl+alt+b"
+            },
+            {
+                "command": "tamarin.runServer",
+                "key": "ctrl+alt+l"
             }
         ]
     },
