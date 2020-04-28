@@ -69,6 +69,10 @@
             {
                 "command": "tamarin.runServer",
                 "key": "ctrl+alt+l"
+            },
+            {
+                "command": "tamarin.runConsoleProofCommand",
+                "key": "ctrl+alt+p"
             }
         ]
     },

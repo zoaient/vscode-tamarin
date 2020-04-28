@@ -93,7 +93,24 @@ export function activate(context: vscode.ExtensionContext) {
         
     });
 
+    var runConsoleProofCommand = vscode.commands.registerCommand('tamarin.runConsoleProofCommand', () => {
+        if (vscode.window.activeTextEditor){
+            let source = vscode.window.activeTextEditor.document.uri.fsPath;
+            vscode.window.activeTextEditor.document.save().then( () => {
+                let program = "tamarin-prover";
+                let args = ["--prove", source];
+                let terminal = getTerminal();
+                terminal.sendText(program + " " + args.join(' '), true);
+                terminal.show();
+            }, () => {
+                vscode.window.showErrorMessage("Error saving source");
+            });
+        }
+        
+    });
+
     context.subscriptions.push(checkSyntaxCommand);
     context.subscriptions.push(checkSemanticsCommand);
     context.subscriptions.push(runServerCommand);
+    context.subscriptions.push(runConsoleProofCommand);
 }
