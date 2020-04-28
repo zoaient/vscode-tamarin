@@ -1,11 +1,28 @@
 import * as vscode from 'vscode';
 import * as child_process from 'child_process';
 
+function getTerminal(name: string = "serverTamarin") {
+    let target = undefined;
+
+    vscode.window.terminals.forEach(value => {
+        if (value.name === name) {
+            target = value;
+        }
+    });
+
+    if (target === undefined) {
+        target = vscode.window.createTerminal(name);
+    }
+
+    return target;
+}
+
+
+
 export function activate(context: vscode.ExtensionContext) {
 
     console.log('Tamarin extension is now active');
     let stderrOut = vscode.window.createOutputChannel("stderrTamarin");
-    let terminal = vscode.window.createTerminal("serverTamarin");
     
     var checkSyntaxCommand = vscode.commands.registerCommand('tamarin.checkSyntax', () => {
         if (vscode.window.activeTextEditor){
@@ -66,6 +83,7 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.window.activeTextEditor.document.save().then( () => {
                 let program = "tamarin-prover";
                 let args = ["interactive", "--quit-on-warning", source];
+                let terminal = getTerminal();
                 terminal.sendText(program + " " + args.join(' '), true);
                 terminal.show();
             }, () => {
