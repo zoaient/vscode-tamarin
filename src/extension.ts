@@ -97,10 +97,11 @@ export function activate(context: vscode.ExtensionContext) {
         if (vscode.window.activeTextEditor){
             let source = vscode.window.activeTextEditor.document.uri.fsPath;
             vscode.window.activeTextEditor.document.save().then( () => {
+                let timer = "time"
                 let program = "tamarin-prover";
                 let args = ["--prove", source];
                 let terminal = getTerminal();
-                terminal.sendText(program + " " + args.join(' '), true);
+                terminal.sendText(timer + " " + program + " " + args.join(' '), true);
                 terminal.show();
             }, () => {
                 vscode.window.showErrorMessage("Error saving source");

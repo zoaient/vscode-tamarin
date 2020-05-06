@@ -11,4 +11,4 @@
 - [ ] provide autocompletion of keywords defined in the language
 - [x] add command for command line proof
 - [ ] add autocompletion for all keywords
-- [ ] measure time by default when making command line proof
+- [x] measure time by default when making command line proof
