@@ -10,3 +10,5 @@
 - [x] if terminal is closed once, then it cannot start again, so extension must recreate it
 - [ ] provide autocompletion of keywords defined in the language
 - [x] add command for command line proof
+- [ ] add autocompletion for all keywords
+- [ ] measure time by default when making command line proof
