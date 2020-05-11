@@ -1,7 +1,7 @@
 # TODO
 
 - [x] ==> for implication
-- [x] ~~autoclose <> (maybe can't be done, would need to distinguish between pair and comparison)~~
+- [x] ~~automatically close <> (maybe can't be done, would need to distinguish between pair and comparison)~~
 - [x] fix functions that overwrite pattern matching inside
 - [x] add restriction name support
 - [x] add lemma annotations
@@ -12,3 +12,4 @@
 - [x] add command for command line proof
 - [ ] add autocompletion for all keywords
 - [x] measure time by default when making command line proof
+- [ ] add multiple annotation support for lemmas
