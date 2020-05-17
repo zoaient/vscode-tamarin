@@ -60,19 +60,23 @@
         "keybindings": [
             {
                 "command": "tamarin.checkSyntax",
-                "key": "ctrl+alt+q"
+                "key": "ctrl+alt+q",
+                "when": "resourceLangId == tamarin"
             },
             {
                 "command": "tamarin.checkSemantics",
-                "key": "ctrl+alt+b"
+                "key": "ctrl+alt+b",
+                "when": "resourceLangId == tamarin"
             },
             {
                 "command": "tamarin.runServer",
-                "key": "ctrl+alt+l"
+                "key": "ctrl+alt+l",
+                "when": "resourceLangId == tamarin"
             },
             {
                 "command": "tamarin.runConsoleProofCommand",
-                "key": "ctrl+alt+p"
+                "key": "ctrl+alt+p",
+                "when": "resourceLangId == tamarin"
             }
         ]
     },

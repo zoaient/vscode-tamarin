@@ -13,3 +13,4 @@
 - [ ] add autocompletion for all keywords
 - [x] measure time by default when making command line proof
 - [ ] add multiple annotation support for lemmas
+- [x] add context for extension keybindings
