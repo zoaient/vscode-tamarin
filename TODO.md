@@ -14,3 +14,4 @@
 - [x] measure time by default when making command line proof
 - [ ] add multiple annotation support for lemmas
 - [x] add context for extension keybindings
+- [ ] add automatic detection for diff theories
