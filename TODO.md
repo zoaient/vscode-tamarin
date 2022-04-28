@@ -16,3 +16,4 @@
 - [x] add context for extension keybindings
 - [ ] add automatic detection for diff theories
 - [x] add automatic publishing to marketplaces
+- [x] fix filenames whitespace problems when using terminal

@@ -79,7 +79,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     var runServerCommand = vscode.commands.registerCommand('tamarin.runServer', () => {
         if (vscode.window.activeTextEditor){
-            let source = vscode.window.activeTextEditor.document.uri.fsPath;
+            let source = "'" + vscode.window.activeTextEditor.document.uri.fsPath + "'";
             vscode.window.activeTextEditor.document.save().then( () => {
                 let program = "tamarin-prover";
                 let args = ["interactive", "--quit-on-warning", source];
@@ -95,7 +95,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     var runConsoleProofCommand = vscode.commands.registerCommand('tamarin.runConsoleProofCommand', () => {
         if (vscode.window.activeTextEditor){
-            let source = vscode.window.activeTextEditor.document.uri.fsPath;
+            let source = "'" + vscode.window.activeTextEditor.document.uri.fsPath + "'";
             vscode.window.activeTextEditor.document.save().then( () => {
                 let timer = "time"
                 let program = "tamarin-prover";
