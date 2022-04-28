@@ -22,18 +22,18 @@ function getTerminal(name: string = "serverTamarin") {
 export function activate(context: vscode.ExtensionContext) {
 
     console.log('Tamarin extension is now active');
-    let stderrOut = vscode.window.createOutputChannel("stderrTamarin");
+    const stderrOut = vscode.window.createOutputChannel("stderrTamarin");
     
-    var checkSyntaxCommand = vscode.commands.registerCommand('tamarin.checkSyntax', () => {
+    const checkSyntaxCommand = vscode.commands.registerCommand('tamarin.checkSyntax', () => {
         if (vscode.window.activeTextEditor){
-            let source = vscode.window.activeTextEditor.document.uri.fsPath;
+            const source = vscode.window.activeTextEditor.document.uri.fsPath;
             vscode.window.activeTextEditor.document.save().then( () => {
-                    let program = "tamarin-prover";
-                    let args = ["--parse-only", source];
-                    let result = child_process.spawnSync(program, args);
+                    const program = "tamarin-prover";
+                    const args = ["--parse-only", source];
+                    const result = child_process.spawnSync(program, args);
                     if (result.status !== 0) {
                         if (result.stderr.length > 0) {
-                                let escaped_output = result.stderr.toString();
+                                const escaped_output = result.stderr.toString();
                                 stderrOut.append(escaped_output);
                                 stderrOut.show(true);
                             }
@@ -51,16 +51,16 @@ export function activate(context: vscode.ExtensionContext) {
         
     });
 
-    var checkSemanticsCommand = vscode.commands.registerCommand('tamarin.checkSemantics', () => {
+    const checkSemanticsCommand = vscode.commands.registerCommand('tamarin.checkSemantics', () => {
         if (vscode.window.activeTextEditor){
-            let source = vscode.window.activeTextEditor.document.uri.fsPath;
+            const source = vscode.window.activeTextEditor.document.uri.fsPath;
             vscode.window.activeTextEditor.document.save().then( () => {
-                let program = "tamarin-prover";
-                let args = ["--quit-on-warning", source];
-                let result = child_process.spawnSync(program, args);
+                const program = "tamarin-prover";
+                const args = ["--quit-on-warning", source];
+                const result = child_process.spawnSync(program, args);
                 if (result.status !== 0) {
                     if (result.stderr.length > 0) {
-                            let escaped_output = result.stderr.toString();
+                            const escaped_output = result.stderr.toString();
                             stderrOut.append(escaped_output);
                             stderrOut.show(true);
                         }
@@ -77,13 +77,13 @@ export function activate(context: vscode.ExtensionContext) {
         
     });
 
-    var runServerCommand = vscode.commands.registerCommand('tamarin.runServer', () => {
+    const runServerCommand = vscode.commands.registerCommand('tamarin.runServer', () => {
         if (vscode.window.activeTextEditor){
-            let source = "'" + vscode.window.activeTextEditor.document.uri.fsPath + "'";
+            const source = "'" + vscode.window.activeTextEditor.document.uri.fsPath + "'";
             vscode.window.activeTextEditor.document.save().then( () => {
-                let program = "tamarin-prover";
-                let args = ["interactive", "--quit-on-warning", source];
-                let terminal = getTerminal();
+                const program = "tamarin-prover";
+                const args = ["interactive", "--quit-on-warning", source];
+                const terminal = getTerminal();
                 terminal.sendText(program + " " + args.join(' '), true);
                 terminal.show();
             }, () => {
@@ -93,14 +93,14 @@ export function activate(context: vscode.ExtensionContext) {
         
     });
 
-    var runConsoleProofCommand = vscode.commands.registerCommand('tamarin.runConsoleProofCommand', () => {
+    const runConsoleProofCommand = vscode.commands.registerCommand('tamarin.runConsoleProofCommand', () => {
         if (vscode.window.activeTextEditor){
-            let source = "'" + vscode.window.activeTextEditor.document.uri.fsPath + "'";
+            const source = "'" + vscode.window.activeTextEditor.document.uri.fsPath + "'";
             vscode.window.activeTextEditor.document.save().then( () => {
-                let timer = "time"
-                let program = "tamarin-prover";
-                let args = ["--prove", source];
-                let terminal = getTerminal();
+                const timer = "time"
+                const program = "tamarin-prover";
+                const args = ["--prove", source];
+                const terminal = getTerminal();
                 terminal.sendText(timer + " " + program + " " + args.join(' '), true);
                 terminal.show();
             }, () => {
