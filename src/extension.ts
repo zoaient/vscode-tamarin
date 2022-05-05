@@ -23,7 +23,6 @@ export function activate(context: vscode.ExtensionContext) {
 
     console.log('Tamarin extension is now active');
     const stderrOut = vscode.window.createOutputChannel("stderrTamarin");
-    
     const checkSyntaxCommand = vscode.commands.registerCommand('tamarin.checkSyntax', () => {
         if (vscode.window.activeTextEditor){
             const source = vscode.window.activeTextEditor.document.uri.fsPath;
@@ -56,7 +55,12 @@ export function activate(context: vscode.ExtensionContext) {
             const source = vscode.window.activeTextEditor.document.uri.fsPath;
             vscode.window.activeTextEditor.document.save().then( () => {
                 const program = "tamarin-prover";
-                const args = ["--quit-on-warning", source];
+                let args: Array<string> = [];
+                const conf = vscode.workspace.getConfiguration('tamarin.parameter');
+                if(!!conf.get('quitOnWarning')){
+                    args.push("--quit-on-warning");
+                }
+                args.push(source);
                 const result = child_process.spawnSync(program, args);
                 if (result.status !== 0) {
                     if (result.stderr.length > 0) {
@@ -82,7 +86,15 @@ export function activate(context: vscode.ExtensionContext) {
             const source = "'" + vscode.window.activeTextEditor.document.uri.fsPath + "'";
             vscode.window.activeTextEditor.document.save().then( () => {
                 const program = "tamarin-prover";
-                const args = ["interactive", "--quit-on-warning", source];
+                let args: Array<string> = ["interactive"];
+                const conf = vscode.workspace.getConfiguration('tamarin.parameter');
+                if(!!conf.get('quitOnWarning')){
+                    args.push("--quit-on-warning");
+                }
+                if(!!conf.get('autoSources')){
+                    args.push("--auto-sources");
+                }
+                args.push(source);
                 const terminal = getTerminal();
                 terminal.sendText(program + " " + args.join(' '), true);
                 terminal.show();
@@ -99,7 +111,15 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.window.activeTextEditor.document.save().then( () => {
                 const timer = "time"
                 const program = "tamarin-prover";
-                const args = ["--prove", source];
+                let args: Array<string> = ["--prove"];
+                const conf = vscode.workspace.getConfiguration('tamarin.parameter');
+                if(!!conf.get('quitOnWarning')){
+                    args.push("--quit-on-warning");
+                }
+                if(!!conf.get('autoSources')){
+                    args.push("--auto-sources");
+                }
+                args.push(source);
                 const terminal = getTerminal();
                 terminal.sendText(timer + " " + program + " " + args.join(' '), true);
                 terminal.show();

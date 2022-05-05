@@ -17,3 +17,4 @@
 - [ ] add automatic detection for diff theories
 - [x] add automatic publishing to marketplaces
 - [x] fix filenames whitespace problems when using terminal
+- [x] add option for --auto-sources and --quit-on-warning
