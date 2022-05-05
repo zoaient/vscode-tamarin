@@ -1,6 +1,6 @@
 {
     "name": "tamarin",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "engines": {
         "vscode": "^1.44.0"
     },
@@ -55,6 +55,10 @@
             {
                 "command": "tamarin.runServer",
                 "title": "Tamarin Run Code in Server"
+            },
+            {
+                "command": "tamarin.runConsoleProofCommand",
+                "title": "Tamarin Run Code in Console"
             }
         ],
         "keybindings": [
@@ -78,7 +82,22 @@
                 "key": "ctrl+alt+p",
                 "when": "resourceLangId == tamarin"
             }
-        ]
+        ],
+        "configuration": {
+            "title": "Tamarin",
+            "properties": {
+              "tamarin.parameter.autoSources": {
+                "type": "boolean",
+                "default": false,
+                "description": "Use --auto--sources"
+              },
+              "tamarin.parameter.quitOnWarning": {
+                "type": "boolean",
+                "default": true,
+                "description": "Use --quit-on-warning"
+              }
+            }
+          }
     },
     "main": "./out/extension.js",
     "scripts": {
@@ -94,8 +113,8 @@
         "@types/mocha": "^7.0.2",
         "@types/node": "^13.11.0",
         "@types/vscode": "^1.44.0",
-        "@typescript-eslint/eslint-plugin": "^2.26.0",
-        "@typescript-eslint/parser": "^2.26.0",
+        "@typescript-eslint/eslint-plugin": "^5.21.0",
+        "@typescript-eslint/parser": "^5.21.0",
         "eslint": "^6.8.0",
         "glob": "^7.1.6",
         "mocha": "^7.1.1",
