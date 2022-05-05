@@ -55,9 +55,9 @@ export function activate(context: vscode.ExtensionContext) {
             const source = vscode.window.activeTextEditor.document.uri.fsPath;
             vscode.window.activeTextEditor.document.save().then( () => {
                 const program = "tamarin-prover";
-                let args: Array<string> = [];
+                const args: Array<string> = [];
                 const conf = vscode.workspace.getConfiguration('tamarin.parameter');
-                if(!!conf.get('quitOnWarning')){
+                if(!conf.get('quitOnWarning')){
                     args.push("--quit-on-warning");
                 }
                 args.push(source);
@@ -86,12 +86,12 @@ export function activate(context: vscode.ExtensionContext) {
             const source = "'" + vscode.window.activeTextEditor.document.uri.fsPath + "'";
             vscode.window.activeTextEditor.document.save().then( () => {
                 const program = "tamarin-prover";
-                let args: Array<string> = ["interactive"];
+                const args: Array<string> = ["interactive"];
                 const conf = vscode.workspace.getConfiguration('tamarin.parameter');
-                if(!!conf.get('quitOnWarning')){
+                if(!conf.get('quitOnWarning')){
                     args.push("--quit-on-warning");
                 }
-                if(!!conf.get('autoSources')){
+                if(!conf.get('autoSources')){
                     args.push("--auto-sources");
                 }
                 args.push(source);
@@ -111,12 +111,12 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.window.activeTextEditor.document.save().then( () => {
                 const timer = "time"
                 const program = "tamarin-prover";
-                let args: Array<string> = ["--prove"];
+                const args: Array<string> = ["--prove"];
                 const conf = vscode.workspace.getConfiguration('tamarin.parameter');
-                if(!!conf.get('quitOnWarning')){
+                if(!conf.get('quitOnWarning')){
                     args.push("--quit-on-warning");
                 }
-                if(!!conf.get('autoSources')){
+                if(!conf.get('autoSources')){
                     args.push("--auto-sources");
                 }
                 args.push(source);
