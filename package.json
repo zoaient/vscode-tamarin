@@ -55,6 +55,10 @@
             {
                 "command": "tamarin.runServer",
                 "title": "Tamarin Run Code in Server"
+            },
+            {
+                "command": "tamarin.runConsoleProofCommand",
+                "title": "Tamarin Run Code in Console"
             }
         ],
         "keybindings": [
@@ -78,7 +82,22 @@
                 "key": "ctrl+alt+p",
                 "when": "resourceLangId == tamarin"
             }
-        ]
+        ],
+        "configuration": {
+            "title": "Tamarin",
+            "properties": {
+              "tamarin.parameter.autoSources": {
+                "type": "boolean",
+                "default": false,
+                "description": "Use --auto--sources"
+              },
+              "tamarin.parameter.quitOnWarning": {
+                "type": "boolean",
+                "default": true,
+                "description": "Use --quit-on-warning"
+              }
+            }
+          }
     },
     "main": "./out/extension.js",
     "scripts": {
