@@ -1,0 +1,128 @@
+{
+  "fileTypes": [
+    ".spthy"
+  ],
+  "name": "tamarin",
+  "patterns": [
+    {
+      "begin": "(?<!\\\\)\\/\\*",
+      "end": "\\*\\/",
+      "name": "comment.block"
+    },
+    {
+      "begin": "(?<!\\\\)\\/\\/",
+      "end": "\\n",
+      "name": "comment.line"
+    },
+    {
+      "match": "\\b(equations|builtins|functions|protocol|property|begin|end|subsection|section|text|pb|lts|exists-trace|all-traces|enable|assertions|modulo|default_rules|anb-proto|in|let|Fresh|fresh|Public|public)\\b",
+      "name": "keyword.control"
+    },
+    {
+      "match": "\\b(axiom|builtins|protocol|property|subsection|section|text)\\b",
+      "name": "keyword.control"
+    },
+    {
+      "match": "\\b(xor|aenc|adec|senc|sdec|sign|verify|Eq|eq|hashing|signing|revealing-signing|diffie-hellman|symmetric-encryption|asymmetric-encryption|multiset|bilinear-pairing|h|H|sk|pk|Fr|In|Out|K)\\b",
+      "name": "variable.language"
+    },
+    {
+      "match": "\\b(-)?[0-9.]+\\b",
+      "name": "constant.numeric"
+    },
+    {
+      "match": "\\b(in|let|begin|end)\\b",
+      "name": "constant.language"
+    },
+    {
+      "begin": "(?<!\\\\)'",
+      "end": "(?<!\\\\)'",
+      "name": "string.quoted.single"
+    },
+    {
+      "match": "\\b(F|T|All|Ex|not)\\b",
+      "name": "constant.language"
+    },
+    {
+      "match": "(&|\\||==>|==|=|#|\\.|@|~|>|<|\\$)",
+      "name": "keyword.operator"
+    },
+    {
+      "match": "\\b([\\w]+)\\b\\s*\\(",
+      "captures": {
+        "1": {
+          "name": "entity.name.function"
+        }
+      }
+    },
+    {
+      "match": "(rule|restriction)[\\s]+(\\w+)\\s*:",
+      "captures": {
+        "1": {
+          "name": "keyword.control"
+        },
+        "2": {
+          "name": "entity.name.function"
+        }
+      }
+    },
+    {
+      "match": "(lemma)\\s+(\\w+)\\s*(\\[(?:(?:sources|use_induction|reuse)|(?:(?:hide_lemma)=\\w+))(?:,(?:(?:sources|use_induction|reuse)|(?:(?:hide_lemma)=\\w+)))*\\])?\\s*:",
+      "captures": {
+        "1": {
+          "name": "keyword.control"
+        },
+        "2": {
+          "name": "entity.name.function"
+        },
+        "3": {
+          "patterns": [{ "include": "#lemmaopt" }, {"include" : "#hidelemma"}]
+        }
+      }
+    },
+    {
+      "match": "\\b(theory)\\b\\s+\\b(\\w+)\\b",
+      "captures": {
+        "1": {
+          "name": "keyword.control"
+        },
+        "2": {
+          "name": "entity.name.section"
+        }
+      }
+    },
+    {
+      "match": "\\b(\\w+)\\b\\/(\\d+)\\s*(?:\\[(private)\\])?",
+      "captures": {
+        "1": {
+          "name": "entity.name.function"
+        },
+        "2": {
+          "name": "constant.numeric"
+        },
+        "3": {
+          "name": "constant.language"
+        }
+      }
+    }
+  ],
+  "repository":{
+    "lemmaopt":{
+        "match": "(sources|use_induction|reuse|left|right)",
+        "name": "keyword.control"
+    },
+    "hidelemma":{
+        "match": "(hide_lemma)=(\\w+)\\b",
+        "captures": {
+          "1": {
+            "name": "keyword.control"
+          },
+          "2": {
+            "name": "entity.name.function"
+          }
+        }
+    }
+  },
+  "scopeName": "source.tamarin",
+  "uuid": "BF0E7726-65E6-11E7-907B-A6006AD3DBA0"
+}
