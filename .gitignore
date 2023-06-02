@@ -11,3 +11,7 @@ out/
 # IDE
 .vscode/
 .vscode-test/
+
+run.sh
+
+.gitignore

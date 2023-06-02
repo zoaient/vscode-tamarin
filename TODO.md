@@ -12,7 +12,7 @@
 - [x] add command for command line proof
 - [ ] add autocompletion for all keywords
 - [x] measure time by default when making command line proof
-- [ ] add multiple annotation support for lemmas
+- [x] add multiple annotation support for lemmas
 - [x] add context for extension keybindings
 - [ ] add automatic detection for diff theories
 - [x] add automatic publishing to marketplaces
