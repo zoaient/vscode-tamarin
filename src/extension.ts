@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import * as child_process from 'child_process';
+import path = require('path');
+import { runShortcut } from './features/run_shortcut';
 
 function getTerminal(name: string = "serverTamarin") {
     let target = undefined;
@@ -130,8 +132,11 @@ export function activate(context: vscode.ExtensionContext) {
         
     });
 
+    runShortcut(context);
+
     context.subscriptions.push(checkSyntaxCommand);
     context.subscriptions.push(checkSemanticsCommand);
     context.subscriptions.push(runServerCommand);
     context.subscriptions.push(runConsoleProofCommand);
+    
 }
