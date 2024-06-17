@@ -1,0 +1,128 @@
+/*
+Example implementing wide mouthed frog protocol
+======================================
+
+Author: 	Hugo Thevenin
+Date: 	        June 2024
+
+*/
+
+theory WideMouthedFrog
+begin
+
+builtins: hashing, symmetric-encryption
+
+
+
+
+
+rule Generate_Secret_key_AS:
+    [Fr(~k)]
+  --> 
+    [!Secretk($A, $S, ~k)]  // Generate a private key for both Alice and Server
+
+
+    rule Generate_Secret_key_BS:
+    [Fr(~k)] 
+  -->
+    [!Secretk($B, $S, ~k)]  // Generate a private key for both Bob and Server
+
+
+    
+    
+rule Reveal_secretk:
+    [ !Secretk(A, B, ltk) ]
+  --[ Secretk_reveal(A, B) ]->
+    [ Out(ltk) ]
+
+
+rule Alice_1:
+    [
+        !Secretk($A, $S, kas)
+        ,Fr(~kab)
+        ,Fr(~Ta)
+    ]
+  --[Alice_sends($A, $S, ~kab)]->
+    [
+      Out(<$A,senc(<' 1', ~Ta, $B, ~kab>,kas)>)  
+    ]
+
+rule Server_1:
+    [
+        !Secretk($B, $S, kbs)
+        ,!Secretk($A, $S, kas)
+        ,In(<$A,senc(<' 1', Ta, $B, kab>,kas)>)
+        ,Fr(~Ts)
+    ]
+  --[Server_send($A, $S, $B, kab)]->
+    [
+       Out(senc(<' 2', ~Ts, $A, kab>,kbs)) 
+    ]
+
+rule Bob_1:
+    [
+        !Secretk($B, $S, kbs)
+        ,In(senc(<' 2', Ts, $A, kab>,kbs))
+    ]
+  --[Bob_receive($S, $B, kab)]->
+    [
+    
+    ]
+
+
+lemma key_secrecy_1:
+    " not(Ex A S kab #i #j.
+        Alice_sends(A, S, kab) @i
+
+        &K(kab) @j
+        
+        & not( (Ex #r. Secretk_reveal(A, S) @r)
+        | (Ex B #r. Secretk_reveal(B, S) @r))
+        )
+    "
+
+lemma key_secrecy_2:
+    "not(Ex A B S kab #i #j.
+        Server_send(A, S, B, kab) @i
+
+        &K(kab) @j
+
+        & not ((Ex #r. Secretk_reveal(B, S) @r)
+        | (Ex #r. Secretk_reveal(A,S) @r))  
+        
+    )
+    "
+
+lemma authentication_kab_1:
+    "
+    All A B S kab #i.(
+        Server_send(A, S, B, kab) @i
+        ==>
+        ((Ex #j. Alice_sends(A, S, kab) @j)
+        |(Ex #j. Secretk_reveal(A,S) @j & j < i))
+    )
+    "
+
+lemma authentication_kab_2:
+    "
+    All  B S kab #i.(
+        Bob_receive(S, B, kab) @i
+        ==>
+        ((Ex A #j. Server_send(A, S, B, kab) @j)
+        |(Ex #j. Secretk_reveal(B,S) @j & j < i))
+    )
+    "
+
+    
+
+lemma message_honest_setup:
+    exists-trace
+    "Ex A B S kab #i #j #k.
+        Alice_sends(A, S, kab) @i
+        & Server_send(A, S, B, kab) @j & i < j 
+        & Bob_receive(S, B, kab) @k & j < k 
+        & not(Ex #r. Secretk_reveal(A, S) @ r)
+        & not(Ex #r. Secretk_reveal(B, S) @ r)
+
+    "
+end

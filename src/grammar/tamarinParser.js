@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var fs = require("fs");
+var path = require("path");
+var Parser = require("tree-sitter");
+var Tamarin = require("./tree-sitter-tamarin");
+var parser = new Parser();
+parser.setLanguage(Tamarin);
+var sourceCodePath = './tree-sitter-tamarin/example_file.spthy';
+var sourceCode = fs.readFileSync(path.resolve(__dirname, sourceCodePath), 'utf8');
+var tree = parser.parse(sourceCode);
+console.log(tree.rootNode.toString());
+var callExpression = tree.rootNode.child(1);
+console.log(callExpression);
