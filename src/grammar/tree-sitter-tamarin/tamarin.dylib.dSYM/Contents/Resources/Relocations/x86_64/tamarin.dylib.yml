@@ -1,6 +1,6 @@
 ---
 triple:          'x86_64-apple-darwin'
-binary-path:     '/Users/hugo/Documents/Telecom Nancy/2A/Stage/vscode_plugin/vscode-tamarin/src/grammar/tree-sitter-tamarin/tamarin.dylib'
+binary-path:     '/Users/hugo/Documents/Telecom Nancy/2A/Stage/vscode-tamarin/src/grammar/tree-sitter-tamarin/tamarin.dylib'
 relocations:
   - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _tree_sitter_spthy, symObjAddr: 0x0, symBinAddr: 0xE10, symSize: 0x10 }
   - { offsetInCU: 0x33, offset: 0x33, size: 0x8, addend: 0x0, symName: _tree_sitter_spthy, symObjAddr: 0x0, symBinAddr: 0xE10, symSize: 0x10 }
