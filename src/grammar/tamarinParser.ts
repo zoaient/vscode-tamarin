@@ -16,17 +16,17 @@ const sourceCode = fs.readFileSync(path.resolve(__dirname, sourceCodePath), 'utf
 
 const tree = parser.parse(sourceCode);
 
-console.log(tree.rootNode.toString());
 
-/*function display_tree(node : Parser.SyntaxNode | null){
+function display_tree(node : Parser.SyntaxNode | null){
     if (node !== null){
-    console.log(node.toString());
+    console.log(node.parent?.children);
     for (let i = 0 ; i< node.childCount; i++){
         if(node.child(i) !== null){
             display_tree(node.child(i));
         }
     }
+
 }
 }
 
-display_tree(tree.rootNode)*/
+display_tree(tree.rootNode)

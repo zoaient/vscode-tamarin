@@ -10,16 +10,15 @@ parser.setLanguage(Tamarin);
 var sourceCodePath = './tree-sitter-tamarin/example_file.spthy';
 var sourceCode = fs.readFileSync(path.resolve(__dirname, sourceCodePath), 'utf8');
 var tree = parser.parse(sourceCode);
-console.log(tree.rootNode.toString());
-/*function display_tree(node : Parser.SyntaxNode | null){
-    if (node !== null){
-    console.log(node.toString());
-    for (let i = 0 ; i< node.childCount; i++){
-        if(node.child(i) !== null){
-            display_tree(node.child(i));
+function display_tree(node) {
+    var _a;
+    if (node !== null) {
+        console.log((_a = node.parent) === null || _a === void 0 ? void 0 : _a.children);
+        for (var i = 0; i < node.childCount; i++) {
+            if (node.child(i) !== null) {
+                display_tree(node.child(i));
+            }
         }
     }
 }
-}
-
-display_tree(tree.rootNode)*/ 
+display_tree(tree.rootNode);
