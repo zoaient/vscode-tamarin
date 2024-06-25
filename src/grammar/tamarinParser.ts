@@ -19,7 +19,7 @@ const tree = parser.parse(sourceCode);
 
 function display_tree(node : Parser.SyntaxNode | null){
     if (node !== null){
-    console.log(node.parent?.children);
+    console.log(node.isError, node.grammarType, node.firstChild);
     for (let i = 0 ; i< node.childCount; i++){
         if(node.child(i) !== null){
             display_tree(node.child(i));

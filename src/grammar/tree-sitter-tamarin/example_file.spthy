@@ -9,16 +9,24 @@ Date: 	        June 2024
 
 theory WideMouthedFrog
 begin
+builtins: symmetric-encryption, asymmetric-encryption
+functions: blabla/2 
 
-
-
-
-
-
-
-rule Generate_Secret_key_AS:
-    [Fr(~k)]
+rule rule_:
+  [  ]
   -->
-    [!Secretk($A, $S, ~k) // Generate a private key for both Alice and Server
+  [  ]
+
+
+  lemma message_honest_setup:
+  exists-trace
+  "Ex A B S kab #i #j #k.
+      Alice_sends(A, S, kab) @i
+      & Server_send(A, S, B, kab) @j & i < j 
+      & Bob_receive(S, B, kab) @k & j < k 
+      & not(Ex #r. Secretk_reveal(A, S) @ r)
+       not (Ex #r. Secretk_reveal(B, S) @ r )
+
+  "
 
 end

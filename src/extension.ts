@@ -26,7 +26,7 @@ function getTerminal(name: string = "serverTamarin") {
 function plugin_features(context : vscode.ExtensionContext){
    runShortcut(context);
    syntax_error.display_syntax_errors(context);
-
+  
 }
 
 
@@ -142,8 +142,10 @@ export function activate(context: vscode.ExtensionContext) {
         
     });
 
-    //Fonctionnalités du plugin 
-    plugin_features(context)
+    //Fonctionnalités du plugin
+     plugin_features(context);
+   
+
    
 
     context.subscriptions.push(checkSyntaxCommand);
