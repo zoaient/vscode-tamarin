@@ -3,8 +3,9 @@ import * as child_process from 'child_process';
 import path = require('path');
 import { runShortcut } from './features/run_shortcut';
 import * as syntax_error from './features/syntax_error';
-import { LanguageClient } from 'vscode-languageclient/node';
-import { startLanguageServer } from './languageServer';
+
+
+
 
 function getTerminal(name: string = "serverTamarin") {
     let target = undefined;
@@ -20,6 +21,12 @@ function getTerminal(name: string = "serverTamarin") {
     }
 
     return target;
+}
+
+function plugin_features(context : vscode.ExtensionContext){
+   runShortcut(context);
+   syntax_error.display_syntax_errors(context);
+
 }
 
 
@@ -135,13 +142,13 @@ export function activate(context: vscode.ExtensionContext) {
         
     });
 
-    runShortcut(context);
-   syntax_error.display_errors(context);
+    //Fonctionnalités du plugin 
+    plugin_features(context)
+   
 
     context.subscriptions.push(checkSyntaxCommand);
     context.subscriptions.push(checkSemanticsCommand);
     context.subscriptions.push(runServerCommand);
     context.subscriptions.push(runConsoleProofCommand);
-    //startLanguageServer(context);
     
 }
