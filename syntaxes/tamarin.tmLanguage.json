@@ -19,7 +19,7 @@
       "name": "keyword.control"
     },
     {
-      "match": "\\b(axiom|builtins|protocol|property|subsection|section|text|functions|tactic|macros|exists-trace)\\b",
+      "match": "\\b(axiom|builtins|protocol|property|subsection|section|text|functions|tactic|macros|exists-trace|equations)\\b",
       "name": "keyword.control"
     },
     {

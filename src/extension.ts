@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as child_process from 'child_process';
 import path = require('path');
 import { runShortcut } from './features/run_shortcut';
-import * as syntax_error from './features/syntax_error';
+import { display_syntax_errors } from './features/syntax_error';
 
 
 
@@ -25,7 +25,7 @@ function getTerminal(name: string = "serverTamarin") {
 
 function plugin_features(context : vscode.ExtensionContext){
    runShortcut(context);
-   syntax_error.display_syntax_errors(context);
+   display_syntax_errors(context)
   
 }
 
