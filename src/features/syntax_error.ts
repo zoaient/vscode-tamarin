@@ -89,7 +89,6 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
         else if (node.firstChild?.grammarType === "nested_formula" || node.firstChild?.grammarType === "action_constraint" || node.firstChild?.grammarType === "conjunction"){
             build_error_display(node, editeur, "EXPECTING '&', '∧', '|', '∨', '==>'");
         }
-        
         else {
             build_error_display(node, editeur, node.toString().slice(1,-1));
         }
@@ -133,6 +132,34 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
 
             diagnostics.set(editeur.document.uri, diags);
             return;
+        }
+        else if (node.grammarType === 'end'){
+        const endPosition = editor.document.positionAt(node.endIndex);
+        const endOfDocumentPosition = editor.document.positionAt(editor.document.getText().length);
+        const unreachableRange = new vscode.Range(endPosition, endOfDocumentPosition);
+        const unreachableDecoration = vscode.window.createTextEditorDecorationType({
+            backgroundColor: 'rgba(255, 255, 255, 0.5)',
+            dark: {
+                backgroundColor: 'rgba(0, 0, 0, 0.5)'
+            }
+        });
+        let hasContentAfterEnd = false;
+        const text = editor.document.getText();
+        for (let lineNum = endPosition.line + 1; lineNum <= endOfDocumentPosition.line; lineNum++) {
+            const line = text.split('\n')[lineNum];
+            if (line.trim() !== '') {
+                hasContentAfterEnd = true;
+                break;
+            }
+        }
+        if (!hasContentAfterEnd) {
+            return;
+        }
+        editor.setDecorations(unreachableDecoration, [unreachableRange]);
+        const message = "Code unreachable";
+        const severity = vscode.DiagnosticSeverity.Warning;
+        const diagnostic = new vscode.Diagnostic(unreachableRange, message, severity);
+        diags.push(diagnostic);
         }
 
         
