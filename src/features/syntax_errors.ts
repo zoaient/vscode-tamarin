@@ -81,7 +81,7 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
             build_error_display(node, editeur, "MISSING ':' or lemma name ");
         }
         else if (node.firstChild?.grammarType === "premise" || (node.firstChild?.grammarType === "rule" && (node.firstChild.nextSibling?.grammarType === "ident" || node.firstChild.nextSibling?.nextSibling?.grammarType === ":"))){
-            build_error_display(node, editeur, "ERROR in premise the syntax for a rule is either \n []-->[] \n or \n []--[]->[]")
+            build_error_display(node, editeur, "ERROR in rule structure the syntax for a rule is either \n []-->[] \n or \n []--[]->[]")
         }
         else if(node.firstChild?.grammarType === "pre_defined"){
             build_error_display(node, editeur, "MISSING generalized quantifier");
@@ -138,9 +138,9 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
         const endOfDocumentPosition = editor.document.positionAt(editor.document.getText().length);
         const unreachableRange = new vscode.Range(endPosition, endOfDocumentPosition);
         const unreachableDecoration = vscode.window.createTextEditorDecorationType({
-            backgroundColor: 'rgba(255, 255, 255, 0.5)',
+            textDecoration: 'none; opacity: 0.5; background-color: none; border: none;',
             dark: {
-                backgroundColor: 'rgba(0, 0, 0, 0.5)'
+                textDecoration: 'none; opacity: 0.5; background-color: none; border: none;',
             }
         });
         let hasContentAfterEnd = false;

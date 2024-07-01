@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as child_process from 'child_process';
 import path = require('path');
 import { runShortcut } from './features/run_shortcut';
-import { display_syntax_errors } from './features/syntax_error';
+import { display_syntax_errors } from './features/syntax_errors';
 
 
 

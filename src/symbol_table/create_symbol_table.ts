@@ -1,14 +1,17 @@
 import * as vscode from 'vscode'
 import Parser = require("web-tree-sitter");
-import {getName} from '../features/syntax_error'
+import {getName} from '../features/syntax_errors'
+import { check_rule } from '../features/wellformedness_checks';
 
 export type CreateSymbolTableResult = {
     symbolTable: TamarinSymbolTable
 };
 
+let diagCollection = vscode.languages.createDiagnosticCollection('Tamarin');
 export const createSymbolTable = (root : Parser.SyntaxNode, editor :vscode.TextEditor): CreateSymbolTableResult => {
+    let diags: vscode.Diagnostic[] = []; 
     const symbolTableVisitor = new SymbolTableVisitor();
-    return {symbolTable: symbolTableVisitor.visit(root, editor)};
+    return {symbolTable: symbolTableVisitor.visit(root, editor, diags)};
 };
 
 export enum DeclarationType{
@@ -35,7 +38,7 @@ export enum DeclarationType{
     PersistentF =  'persistent_fact', 
 };
 
-const ReservedFacts: string[] = ['Fr','In','Out','KD','KU','K'] ;
+export const ReservedFacts: string[] = ['Fr','In','Out','KD','KU','K'] ;
 
 const ExistingBuiltIns : string[] = 
 [
@@ -63,6 +66,7 @@ const AssociatedFunctions: string[][] =
 ]
 
 
+
 class SymbolTableVisitor{
     constructor(
     private readonly symbolTable : TamarinSymbolTable = new TamarinSymbolTable() ,
@@ -74,7 +78,8 @@ class SymbolTableVisitor{
         return this.symbolTable;
     };
 
-    public visit(root : Parser.SyntaxNode, editor : vscode.TextEditor): TamarinSymbolTable{
+    
+    public visit(root : Parser.SyntaxNode, editor : vscode.TextEditor, diags: vscode.Diagnostic[]): TamarinSymbolTable{
         for (let i = 0; i < root.children.length; i++){
             const child = root.child(i);
             if(child?.grammarType === DeclarationType.Lemma && root.grammarType === 'lemma' && root.parent !== null){
@@ -82,6 +87,7 @@ class SymbolTableVisitor{
             }
             else if (child?.grammarType === DeclarationType.Rule && root.grammarType === 'simple_rule' && root.parent !== null){
                 this.registerident(root, DeclarationType.Rule, getName(child.nextSibling, editor), root.parent)
+                check_rule(root, editor, diags);
             }
             else if (child?.grammarType === DeclarationType.QF){
                 for (let grandchild of child.children)
@@ -92,7 +98,7 @@ class SymbolTableVisitor{
                         this.registerident(grandchild, DeclarationType.Variable, getName(grandchild.child(1), editor), child);
                     }
                     else if (grandchild.grammarType === 'nested_formula'){
-                        this.visit(grandchild, editor)
+                        this.visit(grandchild, editor, diags)
                     }
             }
             else if(child?.grammarType === DeclarationType.Functions){
@@ -139,7 +145,7 @@ class SymbolTableVisitor{
             }
             else if(child?.grammarType === DeclarationType.Conclusion){
                 for (let grandchild of child.children){
-                    if(grandchild.grammarType === DeclarationType.LinearF ||grandchild.grammarType === DeclarationType.PersistentF){
+                    if(grandchild.grammarType === DeclarationType.LinearF || grandchild.grammarType === DeclarationType.PersistentF){
                         const fact_name : string = getName(grandchild.child(0), editor);
                         if(!( ReservedFacts.includes(fact_name))){
                             const args = grandchild.child(2)?.children;
@@ -148,6 +154,9 @@ class SymbolTableVisitor{
                                 for (let arg of args){
                                     if(arg.type === ","){
                                         arity ++;
+                                    }
+                                    else if(arg.grammarType === 'pub_var'){
+
                                     }
                                 }
                                 arity ++ 
@@ -159,10 +168,11 @@ class SymbolTableVisitor{
             }
             else{
                 if(child !== null){
-                    this.visit(child, editor);
+                    this.visit(child, editor, diags);
                 }
             }
         }
+        diagCollection.set(editor.document.uri, diags)
         return this.symbolTable
     };
 

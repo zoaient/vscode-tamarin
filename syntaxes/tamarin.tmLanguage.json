@@ -15,7 +15,7 @@
       "name": "comment.line"
     },
     {
-      "match": "\\b(equations|functions|protocol|property|begin|end|subsection|section|text|pb|lts|exists-trace|all-traces|enable|assertions|modulo|default_rules|anb-proto|in|let|Fresh|fresh|Public|public)\b",
+      "match": "\\b(equations|functions|protocol|property|begin|end|subsection|section|text|pb|lts|all-traces|enable|assertions|modulo|default_rules|anb-proto|in|let|Fresh|fresh|Public|public)\b",
       "name": "keyword.control"
     },
     {
