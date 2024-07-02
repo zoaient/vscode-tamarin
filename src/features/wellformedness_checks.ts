@@ -87,7 +87,7 @@ function check_variables_type_is_consistent_inside_a_rule(symbol_table : Tamarin
                             continue;
                         }
                         else{
-                            build_error_display(symbol_table.getSymbol(i).node, editor, diags, "Inconsistent variables : variables with the same name in the same rule must have same types ");
+                            build_error_display(symbol_table.getSymbol(i).node, editor, diags, "Error: Inconsistent variables, variables with the same name in the same rule must have same types ");
                             break;
                         }
                     }
@@ -116,7 +116,7 @@ function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor: vscod
             if(name){
                 //Checks if fact name is correct -------
                 if(!(name.charCodeAt(0) >= 65  && name.charCodeAt(0) <= 90)){
-                    build_error_display(symbol_table.getSymbol(i).node, editor, diags, "Error : Facts must start with an uppercase")
+                    build_error_display(symbol_table.getSymbol(i).node, editor, diags, "Error: Facts must start with an uppercase")
                 }
                 //---------
                 for( let j = 0; j < facts.length ; j++ ){
@@ -127,7 +127,7 @@ function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor: vscod
                     else if (name2?.toLowerCase() === name.toLowerCase()){
                         let mu = mostUppercase(symbol_table.getSymbol(i), facts[j]);
                         let lu = leastUppercase(symbol_table.getSymbol(i), facts[j]);
-                        build_warning_display(mu.node, editor, diags, "Warning : Facts are case sensitive, did you intend to use " + 
+                        build_warning_display(mu.node, editor, diags, "Warning: Facts are case sensitive, did you intend to use " + 
                         lu.name)
                         k++;
                         break;
@@ -142,9 +142,37 @@ function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor: vscod
 };
 
 
+function check_variable_is_defined_in_premise(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
+    for( let i = 0 ; i < symbol_table.getSymbols().length; i++){
+        let current_symbol = symbol_table.getSymbol(i);
+        if(current_symbol.type === '$'){continue};  // Do not take into account public variables
+        if(current_symbol.declaration === DeclarationType.CCLVariable){
+            let current_context = current_symbol.context;
+            let is_break = false;
+            for (let j = 0; j < symbol_table.getSymbols().length; j++){
+                let searched_symbol = symbol_table.getSymbol(j);
+                if(j > i){break};
+                if(searched_symbol.context !== current_context || j == i){
+                    continue;
+                }
+                else{
+                    if(searched_symbol.name === current_symbol.name){
+                        is_break = true
+                        break;
+                    }
+                }
+            }
+            if(!is_break){
+                build_error_display(current_symbol.node, editor, diags, "Error: this variable is used in conclusion but doesn't appear in premise");
+            }
+        }
+    }
+}
+
 
 
 export function checks_with_table(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     check_variables_type_is_consistent_inside_a_rule(symbol_table, editor, diags);
     check_case_sensitivity(symbol_table, editor, diags);
+    check_variable_is_defined_in_premise(symbol_table, editor, diags);
 };
