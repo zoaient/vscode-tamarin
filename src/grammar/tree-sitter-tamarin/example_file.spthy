@@ -11,12 +11,18 @@ theory WideMouthedFrog
 begin
 
 builtins : hashing, symmetric-encryption
+functions: blabla/2
 
 
-rule Reveal_secretk:
-
-[!Secretk(A, B, ltk) ]
---[ Secretk_reveal(A, B) ]->
-  [ Out(ltk) ]
+rule Alice_1:
+    [
+        !Secretk($A, $S, %3)
+        ,Fr(~kab)
+        ,Fr(~Ta)
+    ]
+  --[Alice_sends($A, $S, ~kab)]->
+    [
+      Out(<$A,senc(<' 1', ~Ta, $B, ~kab>,kas)>)
+    ]
 
 end

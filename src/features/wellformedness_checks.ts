@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 import Parser = require("web-tree-sitter");
-import { ReservedFacts, DeclarationType } from '../symbol_table/create_symbol_table';
+import { ReservedFacts, DeclarationType, TamarinSymbolTable, TamarinSymbol } from '../symbol_table/create_symbol_table';
 import { getName } from './syntax_errors';
 
 
@@ -8,23 +8,51 @@ import { getName } from './syntax_errors';
 
 function build_error_display(node : Parser.SyntaxNode, editeur: vscode.TextEditor, diags : vscode.Diagnostic[], message : string){
     let start = node.startIndex;
+    let end  = node.endIndex;
     let positionStart = editeur.document.positionAt(start);
-    let diag = new vscode.Diagnostic(new vscode.Range(positionStart, positionStart.translate(0,0) ), message, vscode.DiagnosticSeverity.Error);
+    let positionEnd = editeur.document.positionAt(end);
+    let diag = new vscode.Diagnostic(new vscode.Range(positionStart, positionEnd ), message, vscode.DiagnosticSeverity.Error);
     diags.push(diag)
 }
 
 function build_warning_display(node : Parser.SyntaxNode, editeur: vscode.TextEditor, diags : vscode.Diagnostic[], message : string){
     let start = node.startIndex;
+    let end  = node.endIndex;
     let positionStart = editeur.document.positionAt(start);
-    let diag = new vscode.Diagnostic(new vscode.Range(positionStart, positionStart.translate(0,0) ), message, vscode.DiagnosticSeverity.Warning);
+    let positionEnd = editeur.document.positionAt(end);
+    let diag = new vscode.Diagnostic(new vscode.Range(positionStart, positionEnd ), message, vscode.DiagnosticSeverity.Warning);
     diags.push(diag)
 }
-export function check_rule(node : Parser.SyntaxNode, editor : vscode.TextEditor, diags : vscode.Diagnostic[]){
-    check_reserved_facts(node, editor, diags);
-    check_variables_type_is_consistent_inside_a_rule(node, editor, diags);
-};
 
-function check_reserved_facts(node : Parser.SyntaxNode, editor : vscode.TextEditor, diags : vscode.Diagnostic[]){
+function mostUppercase(str1: TamarinSymbol, str2: TamarinSymbol): TamarinSymbol {
+    const countUppercase = (str: string): number => {
+      return str.split('').filter(char => char === char.toUpperCase()).length;
+    };
+    let uppercaseCount1 = 0 ;
+    let uppercaseCount2  = 0;
+    if(str1.name && str2.name ){
+     uppercaseCount1 = countUppercase(str1.name);
+     uppercaseCount2 = countUppercase(str2.name);
+    }
+  
+    return uppercaseCount1 > uppercaseCount2 ? str1 : str2;
+  }
+
+  function leastUppercase(str1: TamarinSymbol, str2: TamarinSymbol): TamarinSymbol {
+    const countUppercase = (str: string): number => {
+      return str.split('').filter(char => char === char.toUpperCase()).length;
+    };
+    let uppercaseCount1 = 0 ;
+    let uppercaseCount2  = 0;
+    if(str1.name && str2.name ){
+     uppercaseCount1 = countUppercase(str1.name);
+     uppercaseCount2 = countUppercase(str2.name);
+    }
+  
+    return uppercaseCount1 < uppercaseCount2 ? str1 : str2;
+  }
+
+export function check_reserved_facts(node : Parser.SyntaxNode, editor : vscode.TextEditor, diags : vscode.Diagnostic[]){
     for(let child of node.children){
         if(child.grammarType === DeclarationType.LinearF ||child.grammarType === DeclarationType.PersistentF){
             const fact_name = getName(child.child(0), editor);
@@ -48,6 +76,75 @@ function check_reserved_facts(node : Parser.SyntaxNode, editor : vscode.TextEdit
     
 };
 
-function check_variables_type_is_consistent_inside_a_rule(node : Parser.SyntaxNode, editor : vscode.TextEditor, diags : vscode.Diagnostic[]){
+//A optimiser peut être 
+function check_variables_type_is_consistent_inside_a_rule(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags:vscode.Diagnostic[]){
+    for (let i = 0 ; i < symbol_table.getSymbols().length; i++){
+        if(symbol_table.getSymbol(i).declaration === 'premise_variable' || symbol_table.getSymbol(i).declaration === 'conclusion_variable' || symbol_table.getSymbol(i).declaration === 'action_fact_variable' ){
+            for(let j = 0; j < symbol_table.getSymbols().length; j++){
+                if((symbol_table.getSymbol(i).declaration === 'premise_variable' || symbol_table.getSymbol(i).declaration === 'conclusion_variable' || symbol_table.getSymbol(i).declaration === 'action_fact_variable') && i !== j){
+                    if(symbol_table.getSymbol(i).context === symbol_table.getSymbol(j).context && symbol_table.getSymbol(i).name === symbol_table.getSymbol(j).name){
+                        if(symbol_table.getSymbol(i).type === symbol_table.getSymbol(j).type){
+                            continue;
+                        }
+                        else{
+                            build_error_display(symbol_table.getSymbol(i).node, editor, diags, "Inconsistent variables : variables with the same name in the same rule must have same types ");
+                            break;
+                        }
+                    }
+                    else {
+                        continue;
+                    }
+                }
+                else{
+                    continue;
+                }
+            }
+        }
+        else{
+            continue;
+        }
+    }
+};
 
+function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
+    const facts : TamarinSymbol[]  = [];
+    let k = 0;
+    for( let i = 0 ; i < symbol_table.getSymbols().length; i++){
+        if(symbol_table.getSymbol(i).declaration === DeclarationType.LinearF || symbol_table.getSymbol(i).declaration === 
+        DeclarationType.PersistentF ||  symbol_table.getSymbol(i).declaration === DeclarationType.ActionF ){
+            const name  = symbol_table.getSymbol(i).name;
+            if(name){
+                //Checks if fact name is correct -------
+                if(!(name.charCodeAt(0) >= 65  && name.charCodeAt(0) <= 90)){
+                    build_error_display(symbol_table.getSymbol(i).node, editor, diags, "Error : Facts must start with an uppercase")
+                }
+                //---------
+                for( let j = 0; j < facts.length ; j++ ){
+                    const name2 = facts[j].name;
+                    if(  name2 === name ){
+                        continue;
+                    }
+                    else if (name2?.toLowerCase() === name.toLowerCase()){
+                        let mu = mostUppercase(symbol_table.getSymbol(i), facts[j]);
+                        let lu = leastUppercase(symbol_table.getSymbol(i), facts[j]);
+                        build_warning_display(mu.node, editor, diags, "Warning : Facts are case sensitive, did you intend to use " + 
+                        lu.name)
+                        k++;
+                        break;
+                    }
+                }
+            }
+            facts.push(symbol_table.getSymbol(i));
+            if(k > 0 ){break;};
+        }
+    };
+
+};
+
+
+
+
+export function checks_with_table(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
+    check_variables_type_is_consistent_inside_a_rule(symbol_table, editor, diags);
+    check_case_sensitivity(symbol_table, editor, diags);
 };

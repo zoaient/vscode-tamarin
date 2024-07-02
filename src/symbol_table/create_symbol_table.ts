@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import Parser = require("web-tree-sitter");
 import {getName} from '../features/syntax_errors'
-import { check_rule } from '../features/wellformedness_checks';
+import { check_reserved_facts, checks_with_table } from '../features/wellformedness_checks';
 
 export type CreateSymbolTableResult = {
     symbolTable: TamarinSymbolTable
@@ -11,12 +11,31 @@ let diagCollection = vscode.languages.createDiagnosticCollection('Tamarin');
 export const createSymbolTable = (root : Parser.SyntaxNode, editor :vscode.TextEditor): CreateSymbolTableResult => {
     let diags: vscode.Diagnostic[] = []; 
     const symbolTableVisitor = new SymbolTableVisitor();
-    return {symbolTable: symbolTableVisitor.visit(root, editor, diags)};
+    let symbolTable = symbolTableVisitor.visit(root, editor, diags);
+    checks_with_table(symbolTable, editor, diags)
+    diagCollection.set(editor.document.uri, diags)
+    return {symbolTable};
 };
+
+function find_variables(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
+    let vars : Parser.SyntaxNode[] = []
+    for( let child of node.children){
+        if(child.grammarType === 'pub_var' ||child.grammarType === 'fresh_var' || child.grammarType === DeclarationType.MVONF ||child.grammarType === 'nat_var'){
+            vars.push(child)
+        }
+        else{
+            vars = vars.concat(find_variables(child));
+        }
+    }  
+    return vars;  
+}
 
 export enum DeclarationType{
     Arguments = 'arguments',
     Variable = 'variable',
+    CCLVariable = 'conclusion_variable',
+    PRVariable = 'premise_variable',
+    ActionFVariable = 'action_fact_variable',
 
     Builtins = 'built_ins',
     Functions = 'functions',
@@ -24,6 +43,7 @@ export enum DeclarationType{
     Let  = 'let',
     ActionF = 'action_fact',
     Conclusion = 'conclusion',
+    Premise = 'premise',
 
 
     Lemma = 'lemma',
@@ -37,6 +57,13 @@ export enum DeclarationType{
     LinearF = 'linear_fact',
     PersistentF =  'persistent_fact', 
 };
+
+export enum variable_types{
+    PUB = '$',
+    FRESH = '~',
+    NAT = '%',
+    TEMP = '#'
+}
 
 export const ReservedFacts: string[] = ['Fr','In','Out','KD','KU','K'] ;
 
@@ -87,7 +114,7 @@ class SymbolTableVisitor{
             }
             else if (child?.grammarType === DeclarationType.Rule && root.grammarType === 'simple_rule' && root.parent !== null){
                 this.registerident(root, DeclarationType.Rule, getName(child.nextSibling, editor), root.parent)
-                check_rule(root, editor, diags);
+                check_reserved_facts(root, editor, diags);
             }
             else if (child?.grammarType === DeclarationType.QF){
                 for (let grandchild of child.children)
@@ -142,29 +169,19 @@ class SymbolTableVisitor{
                     }
                     }
                 }
+                this.register_rule_vars(child, DeclarationType.ActionFVariable, editor, root)        
             }
             else if(child?.grammarType === DeclarationType.Conclusion){
                 for (let grandchild of child.children){
-                    if(grandchild.grammarType === DeclarationType.LinearF || grandchild.grammarType === DeclarationType.PersistentF){
-                        const fact_name : string = getName(grandchild.child(0), editor);
-                        if(!( ReservedFacts.includes(fact_name))){
-                            const args = grandchild.child(2)?.children;
-                            if(args){
-                                let arity: number = 0;
-                                for (let arg of args){
-                                    if(arg.type === ","){
-                                        arity ++;
-                                    }
-                                    else if(arg.grammarType === 'pub_var'){
-
-                                    }
-                                }
-                                arity ++ 
-                            this.registerfucntion(child, grandchild.grammarType, getName(grandchild.child(0), editor), arity, root)
-                            }
-                        }
-                    }
+                    this.register_facts(grandchild, child, root, editor)
                 }
+                this.register_rule_vars(child, DeclarationType.CCLVariable, editor, root)
+            }
+            else if (child?.grammarType === DeclarationType.Premise){
+                for (let grandchild of child.children){
+                    this.register_facts(grandchild, child, root, editor)
+                }
+                this.register_rule_vars(child, DeclarationType.PRVariable, editor, root);
             }
             else{
                 if(child !== null){
@@ -176,7 +193,38 @@ class SymbolTableVisitor{
         return this.symbolTable
     };
 
-    private registerident(ident : Parser.SyntaxNode|null|undefined, declaration: DeclarationType, name : string|undefined,  context ?: Parser.SyntaxNode ){
+    private register_rule_vars(node :Parser.SyntaxNode, type : DeclarationType, editor : vscode.TextEditor, root : Parser.SyntaxNode){
+        let vars: Parser.SyntaxNode[] = find_variables(node);
+                for(let k = 0; k < vars.length; k++){
+                    if(vars[k].grammarType === DeclarationType.MVONF){
+                        this.registerident(vars[k], type, getName(vars[k].child(0), editor),root)
+                    }
+                    else{
+                        this.registerident(vars[k], type, getName(vars[k].child(1), editor),root, vars[k].child(0)?.grammarType)
+                    }
+                }
+    }
+
+    private register_facts(grandchild : Parser.SyntaxNode, child : Parser.SyntaxNode, root : Parser.SyntaxNode,  editor : vscode.TextEditor){
+        if(grandchild.grammarType === DeclarationType.LinearF || grandchild.grammarType === DeclarationType.PersistentF){
+            const fact_name : string = getName(grandchild.child(0), editor);
+            if(!( ReservedFacts.includes(fact_name))){
+                const args = grandchild.child(2)?.children;
+                if(args){
+                    let arity: number = 0;
+                    for (let arg of args){
+                        if(arg.type === ","){
+                            arity ++;
+                        }
+                    }
+                    arity ++ ;
+                this.registerfucntion(child, grandchild.grammarType, getName(grandchild.child(0), editor), arity, root);
+                }
+            }
+        }
+    }
+
+    private registerident(ident : Parser.SyntaxNode|null|undefined, declaration: DeclarationType, name : string|undefined,  context ?: Parser.SyntaxNode, type ?: string ){
         if(!ident){
             return;
         }
@@ -184,7 +232,8 @@ class SymbolTableVisitor{
             node : ident,
             declaration:  declaration,
             name : name,
-            context : context
+            context : context,
+            type : type 
         });
 
     };
@@ -209,10 +258,10 @@ class SymbolTableVisitor{
 export type TamarinSymbol = {
     node : Parser.SyntaxNode
     declaration : DeclarationType
-    type ?: Parser.SyntaxNode["grammarType"]
     context ?: Parser.SyntaxNode
     name ?:  string 
     arity ?: number
+    type ?: string
 };
 
 export class TamarinSymbolTable{
@@ -220,9 +269,13 @@ export class TamarinSymbolTable{
 
     public addSymbol(symbol: TamarinSymbol) {
         this.symbols.push(symbol);
-    }
+    };
 
     public getSymbols(): TamarinSymbol[] {
         return this.symbols;
-    }
+    };
+
+    public getSymbol(int : number):TamarinSymbol{
+        return this.symbols[int];
+    };
 };
