@@ -13,16 +13,15 @@ begin
 builtins : hashing, symmetric-encryption
 functions: blabla/2
 
-
-rule Alice_1:
+rule Server_1:
     [
-        !Secretk($A, $S, %3)
-        ,Fr(~kab)
-        ,Fr(~Ta)
+        !Secretk($B, $S, kbs)
+        ,!Secretk($A, $S, kas)
+        ,In(<$A, senc(<' 1', Ta, $B, kab>,kas)>)
+        ,Fr(~Ts)
     ]
-  --[Alice_sends($A, $S, ~kab)]->
+  --[Server_send($A, $S, $B, kab)]->
     [
-      Out(<$A,senc(<' 1', ~Ta, $B, ~kab>,kas)>)
+       Out(senc(<' 2', ~Ts, $A, kab>,kbs))
     ]
-
 end

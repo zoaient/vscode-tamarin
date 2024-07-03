@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 import Parser = require("web-tree-sitter");
-import { ReservedFacts, DeclarationType, TamarinSymbolTable, TamarinSymbol } from '../symbol_table/create_symbol_table';
+import { ReservedFacts, DeclarationType, TamarinSymbolTable, TamarinSymbol, get_arity } from '../symbol_table/create_symbol_table';
 import { getName } from './syntax_errors';
 
 
@@ -56,14 +56,29 @@ export function check_reserved_facts(node : Parser.SyntaxNode, editor : vscode.T
     for(let child of node.children){
         if(child.grammarType === DeclarationType.LinearF ||child.grammarType === DeclarationType.PersistentF){
             const fact_name = getName(child.child(0), editor);
-            if(fact_name === ReservedFacts[0] && node.grammarType === 'conclusion'){
-                build_warning_display(child, editor, diags,  "Fr fact cannot be used in conclusion of a rule");
+            if(fact_name === ReservedFacts[0]){
+                if(node.grammarType === 'conclusion'){
+                    build_warning_display(child, editor, diags,  "Fr fact cannot be used in conclusion of a rule");
+                }
+                if( child.child(2)?.children && get_arity(child.child(2)?.children) !== 1){
+                    build_error_display(child, editor, diags, "Error: incorrect arity for Fr fact, only 1 argument expected")
+                }
             }
-            else if(fact_name === ReservedFacts[1] && node.grammarType === 'conclusion'){
-                build_warning_display(child, editor, diags,  "In fact cannot be used in conclusion of a rule");
+            else if(fact_name === ReservedFacts[1]){
+                if(node.grammarType === 'conclusion'){
+                    build_warning_display(child, editor, diags,  "In fact cannot be used in conclusion of a rule");
+                }
+                if(child.child(2)?.children && get_arity(child.child(2)?.children) !== 1){
+                    build_error_display(child, editor, diags, "Error: incorrect arity for In fact, only 1 argument expected")
+                }
             }
-            else if(fact_name === ReservedFacts[2] && node.grammarType === 'premise'){
-                build_warning_display(child, editor, diags,  "Out fact cannot be used in premise of a rule");
+            else if(fact_name === ReservedFacts[2]){
+                if( node.grammarType === 'premise'){
+                    build_warning_display(child, editor, diags,  "Out fact cannot be used in premise of a rule");
+                }
+                if(child.child(2)?.children && get_arity(child.child(2)?.children) !== 1){
+                    build_error_display(child, editor, diags, "Error: incorrect arity for Out fact, only 1 argument expected")
+                }
             }
             else if((fact_name === ReservedFacts[3] || fact_name === ReservedFacts[4] || fact_name === ReservedFacts[5]) && node.parent?.grammarType === 'simple_rule' ){
                 build_warning_display(child, editor, diags,  "You are not supposed to use KD KU or action K in a rule ");
@@ -87,7 +102,7 @@ function check_variables_type_is_consistent_inside_a_rule(symbol_table : Tamarin
                             continue;
                         }
                         else{
-                            build_error_display(symbol_table.getSymbol(i).node, editor, diags, "Error: Inconsistent variables, variables with the same name in the same rule must have same types ");
+                            build_error_display(symbol_table.getSymbol(i).node, editor, diags, "Error: inconsistent variables, variables with the same name in the same rule must have same types ");
                             break;
                         }
                     }
@@ -116,7 +131,7 @@ function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor: vscod
             if(name){
                 //Checks if fact name is correct -------
                 if(!(name.charCodeAt(0) >= 65  && name.charCodeAt(0) <= 90)){
-                    build_error_display(symbol_table.getSymbol(i).node, editor, diags, "Error: Facts must start with an uppercase")
+                    build_error_display(symbol_table.getSymbol(i).node, editor, diags, "Error: facts must start with an uppercase")
                 }
                 //---------
                 for( let j = 0; j < facts.length ; j++ ){
@@ -127,7 +142,7 @@ function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor: vscod
                     else if (name2?.toLowerCase() === name.toLowerCase()){
                         let mu = mostUppercase(symbol_table.getSymbol(i), facts[j]);
                         let lu = leastUppercase(symbol_table.getSymbol(i), facts[j]);
-                        build_warning_display(mu.node, editor, diags, "Warning: Facts are case sensitive, did you intend to use " + 
+                        build_warning_display(mu.node, editor, diags, "Warning: facts are case sensitive, did you intend to use " + 
                         lu.name)
                         k++;
                         break;
@@ -169,10 +184,86 @@ function check_variable_is_defined_in_premise(symbol_table : TamarinSymbolTable,
     }
 }
 
+function check_action_fact(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
+    let actionFacts: TamarinSymbol[] = [];
+    for( let i = 0 ; i < symbol_table.getSymbols().length; i++){
+        let current_symbol = symbol_table.getSymbol(i);
+        if(current_symbol.declaration === DeclarationType.ActionF && current_symbol.context?.grammarType !== 'simple_rule'){
+            let found_one = false;
+            for(let j = 0; j < actionFacts.length; j++){
+                if(actionFacts[j].name === current_symbol.name){
+                    found_one = true;
+                    if(!(actionFacts[j].arity === current_symbol.arity)){
+                        build_error_display(current_symbol.node, editor, diags, "Error, incorrect arity for this action fact")
+                    }
+                }
+                else{
+                    continue;
+                }
+            }
+            if(!found_one){
+                build_error_display(current_symbol.node, editor, diags, "Error: this action fact is never declared")
+            }
+        }
+        else if (current_symbol.declaration === DeclarationType.ActionF && current_symbol.context?.grammarType === 'simple_rule'){
+            actionFacts.push(current_symbol)
+        }
+        else{
+            continue;
+        }
+    }
+}
+
+function check_function_and_facts_arity(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
+    let known_functions : TamarinSymbol[] = [];
+
+    function getNames(list : TamarinSymbol[]): string[]{
+        let str_list : string[] = [];
+        for(let symbol of list){
+            if(symbol.name){
+                str_list.push(symbol.name);
+            }
+        }
+        return str_list;
+    }
+
+    for( let i = 0; i < symbol_table.getSymbols().length; i++){
+        let current_symbol = symbol_table.getSymbol(i);
+        if(symbol_table.getSymbol(i).declaration === DeclarationType.LinearF || symbol_table.getSymbol(i).declaration === DeclarationType.PersistentF || symbol_table.getSymbol(i).declaration === DeclarationType.Functions || symbol_table.getSymbol(i).declaration === DeclarationType.NARY){
+            if(current_symbol.name){
+                if(getNames(known_functions).includes(current_symbol.name)){
+                    for(let k = 0 ; k < known_functions.length; k ++){
+                        if(current_symbol.name === known_functions[k].name ){
+                            if(current_symbol.arity === known_functions[k].arity){
+                                break;
+                            }
+                            else{
+                                if(current_symbol.declaration === DeclarationType.NARY){
+                                    build_error_display(current_symbol.node, editor, diags, "Error : incorrect arity for this function")
+                                }
+                                else if( current_symbol.declaration === DeclarationType.LinearF){
+                                    build_error_display(current_symbol.node, editor, diags, "Error : incorrect arity for this fact")
+                                }
+                            }
+                        }
+                        else{
+                            continue;
+                        }
+                    }
+                }
+                else{
+                    known_functions.push(current_symbol)
+                }
+            }
+        }
+    }
+}
 
 
 export function checks_with_table(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     check_variables_type_is_consistent_inside_a_rule(symbol_table, editor, diags);
     check_case_sensitivity(symbol_table, editor, diags);
     check_variable_is_defined_in_premise(symbol_table, editor, diags);
+    check_action_fact(symbol_table, editor, diags);
+    check_function_and_facts_arity(symbol_table, editor, diags);
 };

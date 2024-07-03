@@ -22,12 +22,38 @@ function find_variables(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     for( let child of node.children){
         if(child.grammarType === 'pub_var' ||child.grammarType === 'fresh_var' || child.grammarType === DeclarationType.MVONF ||child.grammarType === 'nat_var'){
             vars.push(child)
+            vars = vars.concat(find_variables(child));
         }
         else{
             vars = vars.concat(find_variables(child));
         }
     }  
     return vars;  
+}
+
+function find_linear_fact(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
+    let vars : Parser.SyntaxNode[] = []
+    for( let child of node.children){
+        if(child.grammarType === DeclarationType.LinearF || child.grammarType === DeclarationType.NARY){
+            vars.push(child)
+            vars = vars.concat(find_linear_fact(child));
+        }
+        else{
+            vars = vars.concat(find_linear_fact(child));
+        }
+    }  
+    return vars;  
+}
+
+export function get_arity(node : Parser.SyntaxNode[]|undefined): number{
+    let arity: number = 0;
+    if(node)
+    for (let arg of node){
+        if(arg.type !== ","){
+            arity ++;
+        }
+    } 
+    return arity;
 }
 
 export enum DeclarationType{
@@ -40,6 +66,7 @@ export enum DeclarationType{
     Builtins = 'built_ins',
     Functions = 'functions',
     QF = 'quantified_formula',
+    NF = 'nested_formula',
     Let  = 'let',
     ActionF = 'action_fact',
     Conclusion = 'conclusion',
@@ -56,7 +83,14 @@ export enum DeclarationType{
     Builtin = 'built_in',
     LinearF = 'linear_fact',
     PersistentF =  'persistent_fact', 
+    NARY = 'nary_app',
+    DEFAULT = 'default'
 };
+function convert(grammar_type : string) : DeclarationType{
+    if(grammar_type === 'nary_app'){return DeclarationType.NARY}
+    else if(grammar_type === 'linear_fact'){return DeclarationType.LinearF}
+    else{return DeclarationType.DEFAULT};
+}
 
 export enum variable_types{
     PUB = '$',
@@ -117,7 +151,7 @@ class SymbolTableVisitor{
                 check_reserved_facts(root, editor, diags);
             }
             else if (child?.grammarType === DeclarationType.QF){
-                for (let grandchild of child.children)
+                for (let grandchild of child.children){
                     if(grandchild.grammarType ===  DeclarationType.MVONF){
                         this.registerident(grandchild, DeclarationType.Variable, getName(grandchild.child(0), editor), child);
                     }
@@ -127,6 +161,10 @@ class SymbolTableVisitor{
                     else if (grandchild.grammarType === 'nested_formula'){
                         this.visit(grandchild, editor, diags)
                     }
+                }
+            }
+            else if(child?.grammarType === DeclarationType.NF){
+                this.register_facts_searched(child, editor, root, DeclarationType.ActionF);
             }
             else if(child?.grammarType === DeclarationType.Functions){
                 for (let grandchild of child.children){
@@ -158,13 +196,7 @@ class SymbolTableVisitor{
                     if(grandchild.grammarType === DeclarationType.LinearF && grandchild.child(2) !== null ){
                         const args = grandchild.child(2)?.children;
                         if(args){
-                            let arity: number = 0;
-                            for (let arg of args){
-                                if(arg.type === ","){
-                                    arity ++;
-                                }
-                            }
-                            arity ++ 
+                            let arity: number = get_arity(args)
                         this.registerfucntion(child, DeclarationType.ActionF, getName(grandchild.child(0), editor), arity, root)
                     }
                     }
@@ -172,15 +204,11 @@ class SymbolTableVisitor{
                 this.register_rule_vars(child, DeclarationType.ActionFVariable, editor, root)        
             }
             else if(child?.grammarType === DeclarationType.Conclusion){
-                for (let grandchild of child.children){
-                    this.register_facts(grandchild, child, root, editor)
-                }
+                this.register_facts_searched(child, editor, root);
                 this.register_rule_vars(child, DeclarationType.CCLVariable, editor, root)
             }
             else if (child?.grammarType === DeclarationType.Premise){
-                for (let grandchild of child.children){
-                    this.register_facts(grandchild, child, root, editor)
-                }
+                this.register_facts_searched(child, editor, root);
                 this.register_rule_vars(child, DeclarationType.PRVariable, editor, root);
             }
             else{
@@ -205,24 +233,28 @@ class SymbolTableVisitor{
                 }
     }
 
-    private register_facts(grandchild : Parser.SyntaxNode, child : Parser.SyntaxNode, root : Parser.SyntaxNode,  editor : vscode.TextEditor){
-        if(grandchild.grammarType === DeclarationType.LinearF || grandchild.grammarType === DeclarationType.PersistentF){
-            const fact_name : string = getName(grandchild.child(0), editor);
-            if(!( ReservedFacts.includes(fact_name))){
-                const args = grandchild.child(2)?.children;
+    private register_facts_searched(node :Parser.SyntaxNode, editor : vscode.TextEditor, root : Parser.SyntaxNode, type ?: DeclarationType){
+        let vars: Parser.SyntaxNode[] = find_linear_fact(node);
+        for(let k = 0; k < vars.length; k++){
+            if(ReservedFacts.includes(getName(vars[k].child(0),editor))){
+                continue;
+            }
+            if(node.child(2) !== null){
+                const args = vars[k].child(2)?.children;
                 if(args){
-                    let arity: number = 0;
-                    for (let arg of args){
-                        if(arg.type === ","){
-                            arity ++;
-                        }
-                    }
-                    arity ++ ;
-                this.registerfucntion(child, grandchild.grammarType, getName(grandchild.child(0), editor), arity, root);
+                    let arity: number = get_arity(args);
+                if(type){
+                    this.registerfucntion(vars[k], type, getName(vars[k].child(0),editor),arity, root);
+                }
+                else{
+                    this.registerfucntion(vars[k], convert(vars[k].grammarType) , getName(vars[k].child(0),editor),arity, root)
+                }
                 }
             }
         }
     }
+
+
 
     private registerident(ident : Parser.SyntaxNode|null|undefined, declaration: DeclarationType, name : string|undefined,  context ?: Parser.SyntaxNode, type ?: string ){
         if(!ident){
