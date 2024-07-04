@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import Parser = require("web-tree-sitter");
 import { ReservedFacts, DeclarationType, TamarinSymbolTable, TamarinSymbol, get_arity } from '../symbol_table/create_symbol_table';
 import { getName } from './syntax_errors';
+import { glob } from 'glob';
 
 
 
@@ -259,6 +260,55 @@ function check_function_and_facts_arity(symbol_table : TamarinSymbolTable, edito
     }
 }
 
+function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
+    let lemma_vars : TamarinSymbol[] = [];
+    for (let symbol of symbol_table.getSymbols()){
+        if(symbol.declaration === DeclarationType.LemmaVariable){
+            lemma_vars.push(symbol);
+        }
+    }
+    for( let i = 0; i < lemma_vars.length; i++){
+        if(lemma_vars[i].node.parent?.grammarType === DeclarationType.QF){
+            continue;
+        }
+        let context = lemma_vars[i].context;
+        let globalisbreak = false;
+        while(context?.grammarType !== 'theory'){
+            let context_child_id: number[] = [];
+            if(context?.children){
+                let search_context = context
+                while(search_context.child(0)?.grammarType === 'conjunction' || search_context.child(0)?.grammarType === 'disjunction'){
+                    if(search_context.child(0)){
+                    context_child_id.push((search_context.child(0) as {id:number}).id)
+                    search_context = search_context.child(0) as Parser.SyntaxNode
+                    } 
+                }
+            }
+            let isbreak = false ;
+            for (let j  = 0; j < lemma_vars.length; j++){
+                if((lemma_vars[j].context?.id === context?.id || context_child_id.includes((lemma_vars[j].context as {id : number}).id)) && lemma_vars[j].node.parent?.grammarType === DeclarationType.QF && lemma_vars[j].name === lemma_vars[i].name){
+                    isbreak = true;
+                    break;
+                }
+                
+            }
+            if(isbreak){
+                globalisbreak = true;
+                break;
+            }
+            else {
+                if(context?.parent){
+                    context = context?.parent
+                }
+            }
+        }
+        if(!globalisbreak){
+            build_warning_display(lemma_vars[i].node, editor, diags, "Warning : free term in lemma formula")
+        }
+    }
+}
+
+
 
 export function checks_with_table(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     check_variables_type_is_consistent_inside_a_rule(symbol_table, editor, diags);
@@ -266,4 +316,5 @@ export function checks_with_table(symbol_table : TamarinSymbolTable, editor: vsc
     check_variable_is_defined_in_premise(symbol_table, editor, diags);
     check_action_fact(symbol_table, editor, diags);
     check_function_and_facts_arity(symbol_table, editor, diags);
+    check_free_term_in_lemma(symbol_table, editor, diags);
 };

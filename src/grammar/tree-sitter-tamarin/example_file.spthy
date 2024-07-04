@@ -13,15 +13,15 @@ begin
 builtins : hashing, symmetric-encryption
 functions: blabla/2
 
-rule Server_1:
-    [
-        !Secretk($B, $S, kbs)
-        ,!Secretk($A, $S, kas)
-        ,In(<$A, senc(<' 1', Ta, $B, kab>,kas)>)
-        ,Fr(~Ts)
-    ]
-  --[Server_send($A, $S, $B, kab)]->
-    [
-       Out(senc(<' 2', ~Ts, $A, kab>,kbs))
-    ]
+lemma key_secrecy_2:
+    "not(Ex A B S kab #i #j.
+        Server_send(A, S, B, kab) @i
+
+        &K(kab) @j
+
+        & not ((Ex #r. Secretk_reveal(B, S) @r)
+        | (Ex #r. Secretk_reveal(A,S) @r))  
+        
+    )
+    "
 end

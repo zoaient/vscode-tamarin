@@ -20,7 +20,7 @@ export const createSymbolTable = (root : Parser.SyntaxNode, editor :vscode.TextE
 function find_variables(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     let vars : Parser.SyntaxNode[] = []
     for( let child of node.children){
-        if(child.grammarType === 'pub_var' ||child.grammarType === 'fresh_var' || child.grammarType === DeclarationType.MVONF ||child.grammarType === 'nat_var'){
+        if(child.grammarType === 'pub_var' ||child.grammarType === 'fresh_var' || child.grammarType === DeclarationType.MVONF ||child.grammarType === 'nat_var'|| child.grammarType === 'temporal_var'){
             vars.push(child)
             vars = vars.concat(find_variables(child));
         }
@@ -62,6 +62,7 @@ export enum DeclarationType{
     CCLVariable = 'conclusion_variable',
     PRVariable = 'premise_variable',
     ActionFVariable = 'action_fact_variable',
+    LemmaVariable = 'lemma_variable',
 
     Builtins = 'built_ins',
     Functions = 'functions',
@@ -145,26 +146,18 @@ class SymbolTableVisitor{
             const child = root.child(i);
             if(child?.grammarType === DeclarationType.Lemma && root.grammarType === 'lemma' && root.parent !== null){
                 this.registerident(root, DeclarationType.Lemma, getName(child?.nextSibling, editor), root.parent)
+                this.register_facts_searched(root, editor, root, DeclarationType.ActionF);
+                this.register_vars_lemma(root, DeclarationType.LemmaVariable, editor)
             }
             else if (child?.grammarType === DeclarationType.Rule && root.grammarType === 'simple_rule' && root.parent !== null){
                 this.registerident(root, DeclarationType.Rule, getName(child.nextSibling, editor), root.parent)
                 check_reserved_facts(root, editor, diags);
             }
             else if (child?.grammarType === DeclarationType.QF){
-                for (let grandchild of child.children){
-                    if(grandchild.grammarType ===  DeclarationType.MVONF){
-                        this.registerident(grandchild, DeclarationType.Variable, getName(grandchild.child(0), editor), child);
-                    }
-                    else if(grandchild.grammarType === DeclarationType.TMPV){
-                        this.registerident(grandchild, DeclarationType.Variable, getName(grandchild.child(1), editor), child);
-                    }
-                    else if (grandchild.grammarType === 'nested_formula'){
-                        this.visit(grandchild, editor, diags)
-                    }
-                }
+               continue;
             }
             else if(child?.grammarType === DeclarationType.NF){
-                this.register_facts_searched(child, editor, root, DeclarationType.ActionF);
+                continue;
             }
             else if(child?.grammarType === DeclarationType.Functions){
                 for (let grandchild of child.children){
@@ -201,15 +194,15 @@ class SymbolTableVisitor{
                     }
                     }
                 }
-                this.register_rule_vars(child, DeclarationType.ActionFVariable, editor, root)        
+                this.register_vars_rule(child, DeclarationType.ActionFVariable, editor, root)        
             }
             else if(child?.grammarType === DeclarationType.Conclusion){
                 this.register_facts_searched(child, editor, root);
-                this.register_rule_vars(child, DeclarationType.CCLVariable, editor, root)
+                this.register_vars_rule(child, DeclarationType.CCLVariable, editor, root)
             }
             else if (child?.grammarType === DeclarationType.Premise){
                 this.register_facts_searched(child, editor, root);
-                this.register_rule_vars(child, DeclarationType.PRVariable, editor, root);
+                this.register_vars_rule(child, DeclarationType.PRVariable, editor, root);
             }
             else{
                 if(child !== null){
@@ -221,7 +214,7 @@ class SymbolTableVisitor{
         return this.symbolTable
     };
 
-    private register_rule_vars(node :Parser.SyntaxNode, type : DeclarationType, editor : vscode.TextEditor, root : Parser.SyntaxNode){
+    private register_vars_rule(node :Parser.SyntaxNode, type : DeclarationType, editor : vscode.TextEditor, root : Parser.SyntaxNode){
         let vars: Parser.SyntaxNode[] = find_variables(node);
                 for(let k = 0; k < vars.length; k++){
                     if(vars[k].grammarType === DeclarationType.MVONF){
@@ -229,6 +222,27 @@ class SymbolTableVisitor{
                     }
                     else{
                         this.registerident(vars[k], type, getName(vars[k].child(1), editor),root, vars[k].child(0)?.grammarType)
+                    }
+                }
+    }
+
+    private register_vars_lemma(node :Parser.SyntaxNode, type : DeclarationType, editor : vscode.TextEditor){
+        let vars: Parser.SyntaxNode[] = find_variables(node);
+        let symbol_for_temp = ['@', '<'];
+                for(let k = 0; k < vars.length; k++){
+                    let context: Parser.SyntaxNode = vars[k];
+                    while(context.grammarType !== DeclarationType.NF  && context.grammarType !== 'conjunction' && context.grammarType !== 'disjunction' && context.grammarType !== DeclarationType.Lemma ){
+                        if(context.parent){
+                            context = context.parent;
+                        }
+                    }
+                    if(vars[k].parent !== null){
+                        if(vars[k].grammarType === DeclarationType.MVONF ||  ( vars[k].previousSibling && vars[k].grammarType === DeclarationType.TMPV  && symbol_for_temp.includes((vars[k].previousSibling as Parser.SyntaxNode).grammarType)) || vars[k].parent?.grammarType === 'temp_var_order'){
+                            this.registerident(vars[k], type, getName(vars[k].child(0), editor),context)
+                        }
+                        else{
+                            this.registerident(vars[k], type, getName(vars[k].child(1), editor),context, vars[k].child(0)?.grammarType)
+                        }
                     }
                 }
     }
@@ -256,7 +270,7 @@ class SymbolTableVisitor{
 
 
 
-    private registerident(ident : Parser.SyntaxNode|null|undefined, declaration: DeclarationType, name : string|undefined,  context ?: Parser.SyntaxNode, type ?: string ){
+    private registerident(ident : Parser.SyntaxNode|null|undefined, declaration: DeclarationType, name : string|undefined,  context : Parser.SyntaxNode, type ?: string ){
         if(!ident){
             return;
         }
@@ -270,7 +284,7 @@ class SymbolTableVisitor{
 
     };
 
-    private registerfucntion(ident : Parser.SyntaxNode|null|undefined, declaration: DeclarationType, name : string, arity : number,  context ?: Parser.SyntaxNode ){
+    private registerfucntion(ident : Parser.SyntaxNode|null|undefined, declaration: DeclarationType, name : string, arity : number,  context : Parser.SyntaxNode ){
         if(!ident){
             return;
         }
