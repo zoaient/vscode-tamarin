@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 import Parser = require("web-tree-sitter");
 import { ReservedFacts, DeclarationType, TamarinSymbolTable, TamarinSymbol, get_arity } from '../symbol_table/create_symbol_table';
 import { getName } from './syntax_errors';
-import { glob } from 'glob';
 
 
 
@@ -37,9 +36,9 @@ function mostUppercase(str1: TamarinSymbol, str2: TamarinSymbol): TamarinSymbol 
     }
   
     return uppercaseCount1 > uppercaseCount2 ? str1 : str2;
-  }
+}
 
-  function leastUppercase(str1: TamarinSymbol, str2: TamarinSymbol): TamarinSymbol {
+function leastUppercase(str1: TamarinSymbol, str2: TamarinSymbol): TamarinSymbol {
     const countUppercase = (str: string): number => {
       return str.split('').filter(char => char === char.toUpperCase()).length;
     };
@@ -51,7 +50,15 @@ function mostUppercase(str1: TamarinSymbol, str2: TamarinSymbol): TamarinSymbol 
     }
   
     return uppercaseCount1 < uppercaseCount2 ? str1 : str2;
-  }
+}
+
+function get_child_grammar_type(node :Parser.SyntaxNode): string[]{
+    let results : string[] = []
+    for(let child of node.children) {
+        results.push(child.grammarType)
+    }
+    return results;
+}
 
 export function check_reserved_facts(node : Parser.SyntaxNode, editor : vscode.TextEditor, diags : vscode.Diagnostic[]){
     for(let child of node.children){
@@ -277,10 +284,17 @@ function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vsc
             let context_child_id: number[] = [];
             if(context?.children){
                 let search_context = context
-                while(search_context.child(0)?.grammarType === 'conjunction' || search_context.child(0)?.grammarType === 'disjunction'){
-                    if(search_context.child(0)){
+                let gt_list = get_child_grammar_type(search_context)
+                while(search_context.child(0)?.grammarType === 'conjunction' || search_context.child(0)?.grammarType === 'disjunction' || gt_list.includes('imp') ){
+                    if(gt_list.includes('imp')){
+                    context_child_id.push((search_context.child(gt_list.indexOf('imp')) as {id:number}).id)
+                    search_context = search_context.child(gt_list.indexOf('imp')) as Parser.SyntaxNode
+                    gt_list = get_child_grammar_type(search_context);
+                    }
+                    else if(search_context.child(0)){
                     context_child_id.push((search_context.child(0) as {id:number}).id)
                     search_context = search_context.child(0) as Parser.SyntaxNode
+                    gt_list = get_child_grammar_type(search_context);
                     } 
                 }
             }

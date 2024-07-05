@@ -69,6 +69,7 @@ export enum DeclarationType{
     QF = 'quantified_formula',
     NF = 'nested_formula',
     Let  = 'let',
+    Rule_let_block = "rule_let_block",
     ActionF = 'action_fact',
     Conclusion = 'conclusion',
     Premise = 'premise',
@@ -174,11 +175,13 @@ class SymbolTableVisitor{
                         if(builtinType === 'asymmetric-encryption'||'signing'||'revealing-signing'){ pkcount ++ }
                         this.registerident(grandchild, DeclarationType.Builtin, builtinType, root);
                         const built_in_index = ExistingBuiltIns.indexOf(builtinType);
-                        for (let k = 0 ; k < AssociatedFunctions[built_in_index].length; k += 2){
-                            if(AssociatedFunctions[built_in_index][k] === 'pk' && pkcount > 1){
-                                break;
+                        if(built_in_index > 0){
+                            for (let k = 0 ; k < AssociatedFunctions[built_in_index].length; k += 2){
+                                if(AssociatedFunctions[built_in_index][k] === 'pk' && pkcount > 1){
+                                    break;
+                                }
+                                this.registerfucntion(grandchild, DeclarationType.Functions, AssociatedFunctions[built_in_index][k], parseInt(AssociatedFunctions[built_in_index][k+1]), root);
                             }
-                            this.registerfucntion(grandchild, DeclarationType.Functions, AssociatedFunctions[built_in_index][k], parseInt(AssociatedFunctions[built_in_index][k+1]), root);
                         }
                     }
                     
@@ -204,6 +207,9 @@ class SymbolTableVisitor{
                 this.register_facts_searched(child, editor, root);
                 this.register_vars_rule(child, DeclarationType.PRVariable, editor, root);
             }
+            else if( child?.grammarType === DeclarationType.Rule_let_block){
+                this.register_vars_rule(child, DeclarationType.PRVariable, editor, root)
+            }
             else{
                 if(child !== null){
                     this.visit(child, editor, diags);
@@ -228,23 +234,22 @@ class SymbolTableVisitor{
 
     private register_vars_lemma(node :Parser.SyntaxNode, type : DeclarationType, editor : vscode.TextEditor){
         let vars: Parser.SyntaxNode[] = find_variables(node);
-        let symbol_for_temp = ['@', '<'];
-                for(let k = 0; k < vars.length; k++){
-                    let context: Parser.SyntaxNode = vars[k];
-                    while(context.grammarType !== DeclarationType.NF  && context.grammarType !== 'conjunction' && context.grammarType !== 'disjunction' && context.grammarType !== DeclarationType.Lemma ){
-                        if(context.parent){
-                            context = context.parent;
-                        }
-                    }
-                    if(vars[k].parent !== null){
-                        if(vars[k].grammarType === DeclarationType.MVONF ||  ( vars[k].previousSibling && vars[k].grammarType === DeclarationType.TMPV  && symbol_for_temp.includes((vars[k].previousSibling as Parser.SyntaxNode).grammarType)) || vars[k].parent?.grammarType === 'temp_var_order'){
-                            this.registerident(vars[k], type, getName(vars[k].child(0), editor),context)
-                        }
-                        else{
-                            this.registerident(vars[k], type, getName(vars[k].child(1), editor),context, vars[k].child(0)?.grammarType)
-                        }
-                    }
+        for(let k = 0; k < vars.length; k++){
+            let context: Parser.SyntaxNode = vars[k];
+            while(context.grammarType !== DeclarationType.NF  && context.grammarType !== 'conjunction' && context.grammarType !== 'disjunction' && context.grammarType !== DeclarationType.Lemma ){
+                if(context.parent){
+                    context = context.parent;
                 }
+            }
+            if(vars[k].parent !== null){
+                if(vars[k].grammarType === DeclarationType.MVONF ||  (vars[k].grammarType === DeclarationType.TMPV  && vars[k].children.length === 1)){
+                    this.registerident(vars[k], type, getName(vars[k].child(0), editor),context)
+                }
+                else{
+                    this.registerident(vars[k], type, getName(vars[k].child(1), editor),context, vars[k].child(0)?.grammarType)
+                }
+            }
+        }
     }
 
     private register_facts_searched(node :Parser.SyntaxNode, editor : vscode.TextEditor, root : Parser.SyntaxNode, type ?: DeclarationType){
