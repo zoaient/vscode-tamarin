@@ -51,4 +51,5 @@ const runTamarin = vscode.commands.registerCommand('tamarin.play', () => {
 });
 
 context.subscriptions.push(runTamarin);
+context.subscriptions.push(runTamarinAutoSources);
 }

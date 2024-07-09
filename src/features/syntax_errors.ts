@@ -6,7 +6,7 @@ import { Range } from 'vscode';
 
 
 let diagnostics = vscode.languages.createDiagnosticCollection('Tamarin');
-let symbolTables = new Map<string, CreateSymbolTableResult>();
+export let symbolTables = new Map<string, CreateSymbolTableResult>();
 
 
 //Permet d'obtenir l'indice du noeud actuel par rapport a son père

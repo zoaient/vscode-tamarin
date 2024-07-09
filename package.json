@@ -65,6 +65,15 @@
       {
         "command": "tamarin.play2",
         "title": "Run Tamarin with auto-sources option"
+      },
+      {
+      "command": "tamarin.renameCodeAction",
+      "when": "editorLangId == tamarin",
+      "title" : "Rename"
+      },
+      {
+        "command" : "Rename",
+        "title" : "Rename"
       }
     ],
     "keybindings": [
@@ -104,6 +113,16 @@
         }
       }
     }
+    ,
+  "menus": {
+    "editor/context": [
+      {
+        "command": "Rename",
+        "group": "navigation",
+        "when": "editorTextFocus && editorLangId == tamarin && !inDebugRepl"
+      }
+    ]
+  }
   },
   "main": "./out/extension.js",
   "types": "bindings/node",

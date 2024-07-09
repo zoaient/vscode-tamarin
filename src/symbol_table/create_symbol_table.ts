@@ -55,6 +55,16 @@ export function get_arity(node : Parser.SyntaxNode[]|undefined): number{
     } 
     return arity;
 }
+export function get_range(node : Parser.SyntaxNode|null, editor : vscode.TextEditor): vscode.Range{
+    if (node){
+    const startPos = editor.document.positionAt(editor.document.offsetAt(new vscode.Position(node.startPosition.row, node.startPosition.column)));
+    const endPos = editor.document.positionAt(editor.document.offsetAt(new vscode.Position(node.endPosition.row, node.endPosition.column)));
+    const range = new vscode.Range(startPos, endPos);
+    return range
+    }
+    //inutile normalement 
+    return new vscode.Range(editor.document.positionAt(0), editor.document.positionAt(0))
+}
 
 export enum DeclarationType{
     Arguments = 'arguments',
@@ -146,12 +156,12 @@ class SymbolTableVisitor{
         for (let i = 0; i < root.children.length; i++){
             const child = root.child(i);
             if(child?.grammarType === DeclarationType.Lemma && root.grammarType === 'lemma' && root.parent !== null){
-                this.registerident(root, DeclarationType.Lemma, getName(child?.nextSibling, editor), root.parent)
+                this.registerident(root, DeclarationType.Lemma, getName(child?.nextSibling, editor), root.parent ,get_range(child?.nextSibling, editor))
                 this.register_facts_searched(root, editor, root, DeclarationType.ActionF);
                 this.register_vars_lemma(root, DeclarationType.LemmaVariable, editor)
             }
             else if (child?.grammarType === DeclarationType.Rule && root.grammarType === 'simple_rule' && root.parent !== null){
-                this.registerident(root, DeclarationType.Rule, getName(child.nextSibling, editor), root.parent)
+                this.registerident(root, DeclarationType.Rule, getName(child.nextSibling, editor), root.parent, get_range(child.nextSibling, editor))
                 check_reserved_facts(root, editor, diags);
             }
             else if (child?.grammarType === DeclarationType.QF){
@@ -163,7 +173,7 @@ class SymbolTableVisitor{
             else if(child?.grammarType === DeclarationType.Functions){
                 for (let grandchild of child.children){
                     if(grandchild.grammarType === DeclarationType.FUNCP){
-                        this.registerfucntion(grandchild, DeclarationType.Functions, getName(grandchild.child(0),editor), parseInt(getName(grandchild.child(2),editor)), root);
+                        this.registerfucntion(grandchild, DeclarationType.Functions, getName(grandchild.child(0),editor), parseInt(getName(grandchild.child(2),editor)), root, get_range(grandchild.child(0),editor));
                     }
                 }
             }
@@ -173,14 +183,14 @@ class SymbolTableVisitor{
                     if(grandchild.grammarType === DeclarationType.Builtin && grandchild.child(0) !== null){
                         const builtinType = grandchild.child(0)?.grammarType ?? '';
                         if(builtinType === 'asymmetric-encryption'||'signing'||'revealing-signing'){ pkcount ++ }
-                        this.registerident(grandchild, DeclarationType.Builtin, builtinType, root);
+                        this.registerident(grandchild, DeclarationType.Builtin, builtinType, root, get_range(grandchild, editor));
                         const built_in_index = ExistingBuiltIns.indexOf(builtinType);
                         if(built_in_index > 0){
                             for (let k = 0 ; k < AssociatedFunctions[built_in_index].length; k += 2){
                                 if(AssociatedFunctions[built_in_index][k] === 'pk' && pkcount > 1){
                                     break;
                                 }
-                                this.registerfucntion(grandchild, DeclarationType.Functions, AssociatedFunctions[built_in_index][k], parseInt(AssociatedFunctions[built_in_index][k+1]), root);
+                                this.registerfucntion(grandchild, DeclarationType.Functions, AssociatedFunctions[built_in_index][k], parseInt(AssociatedFunctions[built_in_index][k+1]), root, get_range(grandchild, editor));
                             }
                         }
                     }
@@ -193,7 +203,7 @@ class SymbolTableVisitor{
                         const args = grandchild.child(2)?.children;
                         if(args){
                             let arity: number = get_arity(args)
-                        this.registerfucntion(child, DeclarationType.ActionF, getName(grandchild.child(0), editor), arity, root)
+                        this.registerfucntion(child, DeclarationType.ActionF, getName(grandchild.child(0), editor), arity, root, get_range(grandchild.child(0), editor))
                     }
                     }
                 }
@@ -224,10 +234,10 @@ class SymbolTableVisitor{
         let vars: Parser.SyntaxNode[] = find_variables(node);
                 for(let k = 0; k < vars.length; k++){
                     if(vars[k].grammarType === DeclarationType.MVONF){
-                        this.registerident(vars[k], type, getName(vars[k].child(0), editor),root)
+                        this.registerident(vars[k], type, getName(vars[k].child(0), editor),root, get_range(vars[k].child(0), editor))
                     }
                     else{
-                        this.registerident(vars[k], type, getName(vars[k].child(1), editor),root, vars[k].child(0)?.grammarType)
+                        this.registerident(vars[k], type, getName(vars[k].child(1), editor),root, get_range(vars[k].child(1), editor), vars[k].child(0)?.grammarType)
                     }
                 }
     }
@@ -243,10 +253,10 @@ class SymbolTableVisitor{
             }
             if(vars[k].parent !== null){
                 if(vars[k].grammarType === DeclarationType.MVONF ||  (vars[k].grammarType === DeclarationType.TMPV  && vars[k].children.length === 1)){
-                    this.registerident(vars[k], type, getName(vars[k].child(0), editor),context)
+                    this.registerident(vars[k], type, getName(vars[k].child(0), editor),context, get_range(vars[k].child(0), editor))
                 }
                 else{
-                    this.registerident(vars[k], type, getName(vars[k].child(1), editor),context, vars[k].child(0)?.grammarType)
+                    this.registerident(vars[k], type, getName(vars[k].child(1), editor),context,get_range(vars[k].child(1), editor) ,  vars[k].child(0)?.grammarType)
                 }
             }
         }
@@ -263,10 +273,10 @@ class SymbolTableVisitor{
                 if(args){
                     let arity: number = get_arity(args);
                 if(type){
-                    this.registerfucntion(vars[k], type, getName(vars[k].child(0),editor),arity, root);
+                    this.registerfucntion(vars[k], type, getName(vars[k].child(0),editor),arity, root, get_range(vars[k].child(0),editor));
                 }
                 else{
-                    this.registerfucntion(vars[k], convert(vars[k].grammarType) , getName(vars[k].child(0),editor),arity, root)
+                    this.registerfucntion(vars[k], convert(vars[k].grammarType) , getName(vars[k].child(0),editor),arity, root, get_range(vars[k].child(0),editor))
                 }
                 }
             }
@@ -275,7 +285,7 @@ class SymbolTableVisitor{
 
 
 
-    private registerident(ident : Parser.SyntaxNode|null|undefined, declaration: DeclarationType, name : string|undefined,  context : Parser.SyntaxNode, type ?: string ){
+    private registerident(ident : Parser.SyntaxNode|null|undefined, declaration: DeclarationType, name : string|undefined,  context : Parser.SyntaxNode, range : vscode.Range, type ?: string ){
         if(!ident){
             return;
         }
@@ -284,12 +294,13 @@ class SymbolTableVisitor{
             declaration:  declaration,
             name : name,
             context : context,
-            type : type 
+            type : type, 
+            name_range : range,
         });
 
     };
 
-    private registerfucntion(ident : Parser.SyntaxNode|null|undefined, declaration: DeclarationType, name : string, arity : number,  context : Parser.SyntaxNode ){
+    private registerfucntion(ident : Parser.SyntaxNode|null|undefined, declaration: DeclarationType, name : string, arity : number,  context : Parser.SyntaxNode , range : vscode.Range){
         if(!ident){
             return;
         }
@@ -298,7 +309,8 @@ class SymbolTableVisitor{
             declaration:  declaration,
             name : name,
             arity : arity,
-            context : context
+            context : context,
+            name_range : range
         });
 
     };
@@ -309,11 +321,19 @@ class SymbolTableVisitor{
 export type TamarinSymbol = {
     node : Parser.SyntaxNode
     declaration : DeclarationType
-    context ?: Parser.SyntaxNode
+    context : Parser.SyntaxNode
     name ?:  string 
+    name_range : vscode.Range
     arity ?: number
     type ?: string
+    associated_qf ?: Parser.SyntaxNode
 };
+
+export function set_associated_qf(symbol : TamarinSymbol, node : Parser.SyntaxNode |null):void {
+    if(node){
+        symbol.associated_qf = node;
+    }
+}
 
 export class TamarinSymbolTable{
     private symbols : TamarinSymbol[] = [];
@@ -329,4 +349,6 @@ export class TamarinSymbolTable{
     public getSymbol(int : number):TamarinSymbol{
         return this.symbols[int];
     };
+
+    
 };

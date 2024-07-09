@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 import Parser = require("web-tree-sitter");
-import { ReservedFacts, DeclarationType, TamarinSymbolTable, TamarinSymbol, get_arity } from '../symbol_table/create_symbol_table';
+import { ReservedFacts, DeclarationType, TamarinSymbolTable, TamarinSymbol, get_arity, set_associated_qf } from '../symbol_table/create_symbol_table';
 import { getName } from './syntax_errors';
 
 
@@ -194,6 +194,7 @@ function check_variable_is_defined_in_premise(symbol_table : TamarinSymbolTable,
 
 function check_action_fact(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     let actionFacts: TamarinSymbol[] = [];
+    let errors : string[] = []
     for( let i = 0 ; i < symbol_table.getSymbols().length; i++){
         let current_symbol = symbol_table.getSymbol(i);
         if(current_symbol.declaration === DeclarationType.ActionF && current_symbol.context?.grammarType !== 'simple_rule'){
@@ -202,7 +203,8 @@ function check_action_fact(symbol_table : TamarinSymbolTable, editor: vscode.Tex
                 if(actionFacts[j].name === current_symbol.name){
                     found_one = true;
                     if(!(actionFacts[j].arity === current_symbol.arity)){
-                        build_error_display(current_symbol.node, editor, diags, "Error, incorrect arity for this action fact")
+                        if(current_symbol.name)
+                        errors.push(current_symbol.name)
                     }
                 }
                 else{
@@ -220,10 +222,17 @@ function check_action_fact(symbol_table : TamarinSymbolTable, editor: vscode.Tex
             continue;
         }
     }
+    for(let symbol of symbol_table.getSymbols()){
+        if(symbol.name)
+        if(errors.includes(symbol.name)){
+            build_error_display(symbol.node, editor, diags, " Error : incoherent arity")
+        }
+    }
 }
 
 function check_function_and_facts_arity(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     let known_functions : TamarinSymbol[] = [];
+    let errors : string[] = []
 
     function getNames(list : TamarinSymbol[]): string[]{
         let str_list : string[] = [];
@@ -247,10 +256,11 @@ function check_function_and_facts_arity(symbol_table : TamarinSymbolTable, edito
                             }
                             else{
                                 if(current_symbol.declaration === DeclarationType.NARY){
-                                    build_error_display(current_symbol.node, editor, diags, "Error : incorrect arity for this function")
+                                    errors.push(current_symbol.name);                                    
                                 }
                                 else if( current_symbol.declaration === DeclarationType.LinearF){
-                                    build_error_display(current_symbol.node, editor, diags, "Error : incorrect arity for this fact")
+                                    errors.push(current_symbol.name);                                    
+                                    
                                 }
                             }
                         }
@@ -265,6 +275,26 @@ function check_function_and_facts_arity(symbol_table : TamarinSymbolTable, edito
             }
         }
     }
+    for(let symbol of symbol_table.getSymbols()){
+        if(symbol.name)
+        if(errors.includes(symbol.name)){
+            build_error_display(symbol.node, editor, diags, " Error : incoherent arity")
+        }
+    }
+    for(let symbol of known_functions){
+        let isbreak = false
+        if(symbol.declaration === DeclarationType.NARY){
+            for( let functions of known_functions){
+                if(functions.name === symbol.name && functions !== symbol){
+                    isbreak = true;
+                    break;
+                }
+            }
+            if(!isbreak){
+                build_error_display(symbol.node, editor, diags, "Error : unknown function")
+            }
+        }
+    }
 }
 
 function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
@@ -276,6 +306,7 @@ function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vsc
     }
     for( let i = 0; i < lemma_vars.length; i++){
         if(lemma_vars[i].node.parent?.grammarType === DeclarationType.QF){
+            set_associated_qf(lemma_vars[i], lemma_vars[i].node.parent)
             continue;
         }
         let context = lemma_vars[i].context;
@@ -296,6 +327,15 @@ function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vsc
                     search_context = search_context.child(0) as Parser.SyntaxNode
                     gt_list = get_child_grammar_type(search_context);
                     } 
+                }
+                if(search_context.grammarType === DeclarationType.Lemma){
+                    set_associated_qf(lemma_vars[i], search_context.child(4));
+                }
+                else if(search_context.grammarType === DeclarationType.NF){
+                    set_associated_qf(lemma_vars[i], search_context.child(1))
+                }
+                else{
+                    set_associated_qf(lemma_vars[i], search_context.child(0));
                 }
             }
             let isbreak = false ;
