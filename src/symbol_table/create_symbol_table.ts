@@ -12,11 +12,19 @@ export const createSymbolTable = (root : Parser.SyntaxNode, editor :vscode.TextE
     let diags: vscode.Diagnostic[] = []; 
     const symbolTableVisitor = new SymbolTableVisitor();
     let symbolTable = symbolTableVisitor.visit(root, editor, diags);
+    //convert_linear_facts(symbolTable);
     checks_with_table(symbolTable, editor, diags)
     diagCollection.set(editor.document.uri, diags)
     return {symbolTable};
 };
 
+function convert_linear_facts(ts : TamarinSymbolTable){
+    for (let symbol of ts.getSymbols()){
+        if(symbol.declaration === DeclarationType.LinearF && symbol.node.previousSibling?.grammarType === "!"){
+            symbol.declaration = DeclarationType.PersistentF;
+        }
+    }
+}
 function find_variables(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     let vars : Parser.SyntaxNode[] = []
     for( let child of node.children){
@@ -34,7 +42,7 @@ function find_variables(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
 function find_linear_fact(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     let vars : Parser.SyntaxNode[] = []
     for( let child of node.children){
-        if(child.grammarType === DeclarationType.LinearF || child.grammarType === DeclarationType.NARY){
+        if(child.grammarType === DeclarationType.LinearF || child.grammarType === DeclarationType.NARY || child.grammarType === DeclarationType.PersistentF){
             vars.push(child)
             vars = vars.concat(find_linear_fact(child));
         }

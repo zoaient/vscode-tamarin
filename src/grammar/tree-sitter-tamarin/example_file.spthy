@@ -14,10 +14,8 @@ builtins : hashing, symmetric-encryption
 macros: hashedxor(x, y, z) = h(x ⊕ y ⊕ z),
         coucou(x) = bonjour(x)
 
-lemma key_secrecy_2:
-    "not(Ex A B S kab #i #j.
-        Server_send(hashedxor(A, S, B) kab) @i
-        
-    )
-    "
+        rule Setup:
+        [ Fr(~k) ]
+      --[ OnlyOnce() ]->
+        [ !InitLTK(~k), !RespLTK(~k) ]
 end

@@ -258,7 +258,7 @@ function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable
                                 if(current_symbol.declaration === DeclarationType.NARY){
                                     errors.push(current_symbol.name);                                    
                                 }
-                                else if( current_symbol.declaration === DeclarationType.LinearF){
+                                else if( current_symbol.declaration === DeclarationType.LinearF || current_symbol.declaration === DeclarationType.PersistentF){
                                     errors.push(current_symbol.name);                                    
                                     
                                 }
