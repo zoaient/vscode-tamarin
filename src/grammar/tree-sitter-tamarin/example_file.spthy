@@ -11,16 +11,12 @@ theory WideMouthedFrog
 begin
 
 builtins : hashing, symmetric-encryption
-functions: blabla/2
+macros: hashedxor(x, y, z) = h(x ⊕ y ⊕ z),
+        coucou(x) = bonjour(x)
 
 lemma key_secrecy_2:
     "not(Ex A B S kab #i #j.
-        Server_send(A, S, B, kab) @i
-
-        &K(kab) @j
-
-        & not ((Ex #r. Secretk_reveal(B, S) @r)
-        | (Ex #r. Secretk_reveal(A,S) @r))  
+        Server_send(hashedxor(A, S, B) kab) @i
         
     )
     "

@@ -230,7 +230,7 @@ function check_action_fact(symbol_table : TamarinSymbolTable, editor: vscode.Tex
     }
 }
 
-function check_function_and_facts_arity(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
+function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     let known_functions : TamarinSymbol[] = [];
     let errors : string[] = []
 
@@ -246,7 +246,7 @@ function check_function_and_facts_arity(symbol_table : TamarinSymbolTable, edito
 
     for( let i = 0; i < symbol_table.getSymbols().length; i++){
         let current_symbol = symbol_table.getSymbol(i);
-        if(symbol_table.getSymbol(i).declaration === DeclarationType.LinearF || symbol_table.getSymbol(i).declaration === DeclarationType.PersistentF || symbol_table.getSymbol(i).declaration === DeclarationType.Functions || symbol_table.getSymbol(i).declaration === DeclarationType.NARY){
+        if(symbol_table.getSymbol(i).declaration === DeclarationType.LinearF || symbol_table.getSymbol(i).declaration === DeclarationType.PersistentF || symbol_table.getSymbol(i).declaration === DeclarationType.Functions || symbol_table.getSymbol(i).declaration === DeclarationType.NARY || symbol_table.getSymbol(i).declaration === DeclarationType.Macro){
             if(current_symbol.name){
                 if(getNames(known_functions).includes(current_symbol.name)){
                     for(let k = 0 ; k < known_functions.length; k ++){
@@ -261,6 +261,9 @@ function check_function_and_facts_arity(symbol_table : TamarinSymbolTable, edito
                                 else if( current_symbol.declaration === DeclarationType.LinearF){
                                     errors.push(current_symbol.name);                                    
                                     
+                                }
+                                else if (current_symbol.declaration === DeclarationType.Macro){
+                                    errors.push(current_symbol.name)
                                 }
                             }
                         }
@@ -291,7 +294,7 @@ function check_function_and_facts_arity(symbol_table : TamarinSymbolTable, edito
                 }
             }
             if(!isbreak){
-                build_error_display(symbol.node, editor, diags, "Error : unknown function")
+                build_error_display(symbol.node, editor, diags, "Error : unknown function or macro")
             }
         }
     }
@@ -364,11 +367,14 @@ function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vsc
 
 
 
+
+
+
 export function checks_with_table(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     check_variables_type_is_consistent_inside_a_rule(symbol_table, editor, diags);
     check_case_sensitivity(symbol_table, editor, diags);
     check_variable_is_defined_in_premise(symbol_table, editor, diags);
     check_action_fact(symbol_table, editor, diags);
-    check_function_and_facts_arity(symbol_table, editor, diags);
+    check_function_macros_and_facts_arity(symbol_table, editor, diags);
     check_free_term_in_lemma(symbol_table, editor, diags);
 };

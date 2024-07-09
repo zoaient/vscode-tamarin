@@ -45,11 +45,38 @@ function find_linear_fact(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     return vars;  
 }
 
+function find_narry(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
+    let vars : Parser.SyntaxNode[] = []
+    for( let child of node.children){
+        if(child.grammarType === DeclarationType.NARY){
+            vars.push(child)
+            vars = vars.concat(find_linear_fact(child));
+        }
+        else{
+            vars = vars.concat(find_linear_fact(child));
+        }
+    }  
+    return vars;  
+}
 export function get_arity(node : Parser.SyntaxNode[]|undefined): number{
     let arity: number = 0;
     if(node)
     for (let arg of node){
         if(arg.type !== ","){
+            arity ++;
+        }
+    } 
+    return arity;
+}
+
+export function get_macro_arity(node : Parser.SyntaxNode[]|undefined): number{
+    let arity: number = -1;
+    if(node)
+    for (let arg of node){
+        if(arg.type === "="){
+            break
+        }
+        if(arg.type !== "," && arg.type !== "(" && arg.type !== ")" ){
             arity ++;
         }
     } 
@@ -73,9 +100,11 @@ export enum DeclarationType{
     PRVariable = 'premise_variable',
     ActionFVariable = 'action_fact_variable',
     LemmaVariable = 'lemma_variable',
+    MacroVariable = 'macro_variable',
 
     Builtins = 'built_ins',
     Functions = 'functions',
+    Macros = 'macros',
     QF = 'quantified_formula',
     NF = 'nested_formula',
     Let  = 'let',
@@ -96,7 +125,8 @@ export enum DeclarationType{
     LinearF = 'linear_fact',
     PersistentF =  'persistent_fact', 
     NARY = 'nary_app',
-    DEFAULT = 'default'
+    DEFAULT = 'default',
+    Macro = 'macro',
 };
 function convert(grammar_type : string) : DeclarationType{
     if(grammar_type === 'nary_app'){return DeclarationType.NARY}
@@ -177,6 +207,15 @@ class SymbolTableVisitor{
                     }
                 }
             }
+            else if( child?.grammarType === DeclarationType.Macros){
+                for(let grandchild of child.children){
+                    if(grandchild.grammarType === DeclarationType.Macro){
+                        this.registerfucntion(grandchild, DeclarationType.Macro, getName(grandchild.child(0),editor),get_macro_arity(grandchild.children),root, get_range(grandchild.child(0),editor))
+                        this.register_vars_rule(grandchild, DeclarationType.MacroVariable, editor, grandchild)
+                        this.register_facts_searched(grandchild,editor, root,DeclarationType.NARY )
+                    }
+                }
+            }
             else if (child?.grammarType === DeclarationType.Builtins){
                 let pkcount = 0;
                 for (let grandchild of child.children){
@@ -207,6 +246,7 @@ class SymbolTableVisitor{
                     }
                     }
                 }
+                this.register_narry(child, editor, root)
                 this.register_vars_rule(child, DeclarationType.ActionFVariable, editor, root)        
             }
             else if(child?.grammarType === DeclarationType.Conclusion){
@@ -278,6 +318,22 @@ class SymbolTableVisitor{
                 else{
                     this.registerfucntion(vars[k], convert(vars[k].grammarType) , getName(vars[k].child(0),editor),arity, root, get_range(vars[k].child(0),editor))
                 }
+                }
+            }
+        }
+    }
+
+    private register_narry(node :Parser.SyntaxNode, editor : vscode.TextEditor, root : Parser.SyntaxNode){
+        let vars: Parser.SyntaxNode[] = find_narry(node);
+        for(let k = 0; k < vars.length; k++){
+            if(ReservedFacts.includes(getName(vars[k].child(0),editor))){
+                continue;
+            }
+            if(node.child(2) !== null){
+                const args = vars[k].child(2)?.children;
+                if(args){
+                    let arity: number = get_arity(args);
+                    this.registerfucntion(vars[k], convert(vars[k].grammarType) , getName(vars[k].child(0),editor),arity, root, get_range(vars[k].child(0),editor))
                 }
             }
         }
