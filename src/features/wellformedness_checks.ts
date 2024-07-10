@@ -189,6 +189,20 @@ function check_variable_is_defined_in_premise(symbol_table : TamarinSymbolTable,
                 build_error_display(current_symbol.node, editor, diags, "Error: this variable is used in conclusion but doesn't appear in premise");
             }
         }
+        else if ((current_symbol.declaration === DeclarationType.LinearF || current_symbol.declaration === DeclarationType.PersistentF) && current_symbol.node.parent?.grammarType === DeclarationType.Premise){
+            let isbreak = false;
+            for (let symbol of symbol_table.getSymbols()){
+                if((symbol.declaration === DeclarationType.LinearF || symbol.declaration === DeclarationType.PersistentF ) && symbol.node.id !== current_symbol.node.id ){
+                    if(symbol.node.parent?.grammarType === DeclarationType.Conclusion && symbol.name === current_symbol.name){
+                        isbreak = true
+                        break ;
+                    }
+                }
+            }
+            if(!isbreak){
+                build_error_display(current_symbol.node, editor, diags, "Error : fact occur in premise but never in any conclusion ")
+            }
+        }
     }
 }
 
@@ -364,6 +378,7 @@ function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vsc
         }
     }
 }
+
 
 
 
