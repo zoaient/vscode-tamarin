@@ -1,10 +1,8 @@
 import * as vscode from 'vscode'
 import { symbolTables } from './syntax_errors';
-import Parser = require('web-tree-sitter');
-import path = require('path');
 import { DeclarationType, TamarinSymbol, TamarinSymbolTable } from '../symbol_table/create_symbol_table';
 
-function get_symbol(range : vscode.Range, symbol_table : TamarinSymbolTable): TamarinSymbol|null{
+export function get_symbol(range : vscode.Range, symbol_table : TamarinSymbolTable): TamarinSymbol|null{
     for (let k = 0 ; k < symbol_table.getSymbols().length; k++){
         if(symbol_table.getSymbol(k).name_range.isEqual(range)){
             return symbol_table.getSymbol(k);
@@ -79,6 +77,7 @@ export function RenameCommand(context : vscode.ExtensionContext){
         const range = new vscode.Range(startPos, endPos);
         const corresponding_symbol = get_symbol(range, symbolTable.symbolTable)
 
+        
 
         const newName = await vscode.window.showInputBox({
             placeHolder: "Enter the new name"

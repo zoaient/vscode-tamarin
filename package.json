@@ -74,7 +74,19 @@
       {
         "command" : "Rename",
         "title" : "Rename"
-      }
+      },
+      {
+        "command" : "Search definition",
+        "title" : "Search definition"
+      },
+      {
+        "command": "extension.tabKeyBinding",
+        "title": "Navigate to next symbol"
+    },
+    {
+      "command": "myExtension.navigateToNextSymbol",
+      "title": "Navigate to Next Symbol"
+  }
     ],
     "keybindings": [
       {
@@ -96,7 +108,12 @@
         "command": "tamarin.runConsoleProofCommand",
         "key": "ctrl+alt+p",
         "when": "resourceLangId == tamarin"
-      }
+      },
+    {
+      "key": "ctrl+tab",
+      "command": "extension.tabKeyBinding",
+      "when": "editorTextFocus"
+  }
     ],
     "configuration": {
       "title": "Tamarin",
@@ -118,6 +135,11 @@
     "editor/context": [
       {
         "command": "Rename",
+        "group": "navigation",
+        "when": "editorTextFocus && editorLangId == tamarin && !inDebugRepl"
+      },
+      {
+        "command": "Search definition",
         "group": "navigation",
         "when": "editorTextFocus && editorLangId == tamarin && !inDebugRepl"
       }

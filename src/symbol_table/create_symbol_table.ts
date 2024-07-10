@@ -12,7 +12,7 @@ export const createSymbolTable = (root : Parser.SyntaxNode, editor :vscode.TextE
     let diags: vscode.Diagnostic[] = []; 
     const symbolTableVisitor = new SymbolTableVisitor();
     let symbolTable = symbolTableVisitor.visit(root, editor, diags);
-    //convert_linear_facts(symbolTable);
+    convert_linear_facts(symbolTable);
     checks_with_table(symbolTable, editor, diags)
     diagCollection.set(editor.document.uri, diags)
     return {symbolTable};
@@ -250,7 +250,7 @@ class SymbolTableVisitor{
                         const args = grandchild.child(2)?.children;
                         if(args){
                             let arity: number = get_arity(args)
-                        this.registerfucntion(child, DeclarationType.ActionF, getName(grandchild.child(0), editor), arity, root, get_range(grandchild.child(0), editor))
+                        this.registerfucntion(grandchild, DeclarationType.ActionF, getName(grandchild.child(0), editor), arity, root, get_range(grandchild.child(0), editor))
                     }
                     }
                 }

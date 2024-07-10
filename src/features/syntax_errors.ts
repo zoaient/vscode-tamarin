@@ -180,6 +180,7 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
 
 //Fonction principale 
 export function display_syntax_errors(context: vscode.ExtensionContext): void {
+    let first_time = 0;
     const changed_content = vscode.workspace.onDidChangeTextDocument((event) => {
         vscode.window.visibleTextEditors.forEach(async (editor) => {
             if (editor.document === event.document) {
@@ -198,6 +199,8 @@ export function display_syntax_errors(context: vscode.ExtensionContext): void {
     });
 
     // Appeler les fonctions du plugin pour tous les éditeurs visibles
+    if(first_time === 0){
+    first_time ++
     vscode.window.visibleTextEditors.forEach(async (editor) => {
         const tree = await detect_errors(editor);
         if (tree) {
@@ -209,6 +212,7 @@ export function display_syntax_errors(context: vscode.ExtensionContext): void {
             symbolTables.set(fileName, table);  
         }
     });
+}
 
     context.subscriptions.push(changed_content, diagnostics);  
 }
