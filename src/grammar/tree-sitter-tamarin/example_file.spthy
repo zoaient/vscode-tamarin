@@ -14,8 +14,7 @@ builtins : hashing, symmetric-encryption
 macros: hashedxor(x, y, z) = h(x ⊕ y ⊕ z),
         coucou(x) = bonjour(x)
 
-        rule Setup:
-        [ Fr(~k) ]
-      --[ OnlyOnce() ]->
-        [ !InitLTK(~k), !RespLTK(~k) ]
+restriction equality:
+  "All x y #i. Eq(x,y)@i ==> x=y"
+  
 end

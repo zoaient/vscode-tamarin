@@ -102,9 +102,9 @@ export function check_reserved_facts(node : Parser.SyntaxNode, editor : vscode.T
 //A optimiser peut être 
 function check_variables_type_is_consistent_inside_a_rule(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags:vscode.Diagnostic[]){
     for (let i = 0 ; i < symbol_table.getSymbols().length; i++){
-        if(symbol_table.getSymbol(i).declaration === 'premise_variable' || symbol_table.getSymbol(i).declaration === 'conclusion_variable' || symbol_table.getSymbol(i).declaration === 'action_fact_variable' ){
+        if(symbol_table.getSymbol(i).declaration === DeclarationType.PRVariable || symbol_table.getSymbol(i).declaration === DeclarationType.CCLVariable || symbol_table.getSymbol(i).declaration === DeclarationType.ActionFVariable ){
             for(let j = 0; j < symbol_table.getSymbols().length; j++){
-                if((symbol_table.getSymbol(i).declaration === 'premise_variable' || symbol_table.getSymbol(i).declaration === 'conclusion_variable' || symbol_table.getSymbol(i).declaration === 'action_fact_variable') && i !== j){
+                if((symbol_table.getSymbol(i).declaration === DeclarationType.PRVariable || symbol_table.getSymbol(i).declaration === DeclarationType.CCLVariable || symbol_table.getSymbol(i).declaration === DeclarationType.ActionFVariable) && i !== j){
                     if(symbol_table.getSymbol(i).context === symbol_table.getSymbol(j).context && symbol_table.getSymbol(i).name === symbol_table.getSymbol(j).name){
                         if(symbol_table.getSymbol(i).type === symbol_table.getSymbol(j).type){
                             continue;
@@ -303,7 +303,7 @@ function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable
 function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     let lemma_vars : TamarinSymbol[] = [];
     for (let symbol of symbol_table.getSymbols()){
-        if(symbol.declaration === DeclarationType.LemmaVariable){
+        if(symbol.declaration === DeclarationType.LemmaVariable || symbol.declaration === DeclarationType.RestrictionVariable){
             lemma_vars.push(symbol);
         }
     }
@@ -331,7 +331,7 @@ function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vsc
                     gt_list = get_child_grammar_type(search_context);
                     } 
                 }
-                if(search_context.grammarType === DeclarationType.Lemma){
+                if(search_context.grammarType === DeclarationType.Lemma || search_context.grammarType === DeclarationType.Restriction){
                     set_associated_qf(lemma_vars[i], search_context.child(4));
                 }
                 else if(search_context.grammarType === DeclarationType.NF){
@@ -360,7 +360,7 @@ function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vsc
             }
         }
         if(!globalisbreak){
-            build_warning_display(lemma_vars[i].node, editor, diags, "Warning : free term in lemma formula")
+            build_warning_display(lemma_vars[i].node, editor, diags, "Warning : free term in lemma or restriction formula")
         }
     }
 }
