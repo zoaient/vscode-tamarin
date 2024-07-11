@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import Parser = require("web-tree-sitter");
 import {getName} from '../features/syntax_errors'
 import { check_reserved_facts, checks_with_table } from '../features/wellformedness_checks';
+import { Diagnostic } from 'vscode';
 
 export type CreateSymbolTableResult = {
     symbolTable: TamarinSymbolTable
@@ -9,7 +10,7 @@ export type CreateSymbolTableResult = {
 
 let diagCollection = vscode.languages.createDiagnosticCollection('Tamarin');
 export const createSymbolTable = (root : Parser.SyntaxNode, editor :vscode.TextEditor): CreateSymbolTableResult => {
-    let diags: vscode.Diagnostic[] = []; 
+    let diags: Diagnostic[] = []; 
     const symbolTableVisitor = new SymbolTableVisitor();
     let symbolTable = symbolTableVisitor.visit(root, editor, diags);
     convert_linear_facts(symbolTable);
@@ -281,7 +282,6 @@ class SymbolTableVisitor{
                 }
             }
         }
-        diagCollection.set(editor.document.uri, diags)
         return this.symbolTable
     };
 

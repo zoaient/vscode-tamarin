@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 import Parser = require("web-tree-sitter");
 import { ReservedFacts, DeclarationType, TamarinSymbolTable, TamarinSymbol, get_arity, set_associated_qf } from '../symbol_table/create_symbol_table';
 import { getName } from './syntax_errors';
-import { cpuUsage } from 'process';
 
 
 
