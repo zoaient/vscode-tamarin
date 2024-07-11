@@ -195,7 +195,7 @@ class SymbolTableVisitor{
     public visit(root : Parser.SyntaxNode, editor : vscode.TextEditor, diags: vscode.Diagnostic[]): TamarinSymbolTable{
         for (let i = 0; i < root.children.length; i++){
             const child = root.child(i);
-            if((child?.grammarType === DeclarationType.Lemma && root.grammarType === 'lemma' && root.parent !== null)){
+            if((child?.grammarType === DeclarationType.Lemma && (root.grammarType === 'lemma'|| root.grammarType === 'diff_lemma') && root.parent !== null)){
                 this.registerident(root, DeclarationType.Lemma, getName(child?.nextSibling, editor), root.parent ,get_range(child?.nextSibling, editor))
                 this.register_facts_searched(root, editor, root, DeclarationType.ActionF);
                 this.register_vars_lemma(root, DeclarationType.LemmaVariable, editor)
@@ -301,7 +301,7 @@ class SymbolTableVisitor{
         let vars: Parser.SyntaxNode[] = find_variables(node);
         for(let k = 0; k < vars.length; k++){
             let context: Parser.SyntaxNode = vars[k];
-            while(context.grammarType !== DeclarationType.NF  && context.grammarType !== 'conjunction' && context.grammarType !== 'disjunction' && (context.grammarType !== DeclarationType.Lemma && context.grammarType !== DeclarationType.Restriction) ){
+            while(context.grammarType !== DeclarationType.NF  && context.grammarType !== 'conjunction' && context.grammarType !== 'disjunction' && (context.grammarType !== DeclarationType.Lemma && context.grammarType !== DeclarationType.Restriction && context.grammarType !== 'diff_lemma') ){
                 if(context.parent){
                     context = context.parent;
                 }
