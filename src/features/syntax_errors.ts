@@ -171,7 +171,7 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
 
     findMatches(tree.rootNode,editor);
 
-    diagnostics.set(editor.document.uri, diags);
+   diagnostics.set(editor.document.uri, diags);
 
     return tree.rootNode;
     
@@ -192,7 +192,6 @@ export function display_syntax_errors(context: vscode.ExtensionContext): void {
                         throw new Error('Could not determine file name');
                     }  
                     symbolTables.set(fileName, table); 
-                    console.log(symbolTables);
                 }
             }
         });
