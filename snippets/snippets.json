@@ -71,7 +71,7 @@
 		"scope": "tamarin"
     },
     "rule let in": {
-        "prefix": "rule",
+        "prefix": "rule_let_in",
         "body": [
             "rule ${1:rule_}:",
             "\tlet",
@@ -145,7 +145,7 @@
 		"scope": "tamarin"
     },
     "fresh": {
-        "prefix": "f",
+        "prefix": "fresh",
         "body":[
             "Fr(~${1:nonce})"
         ],
