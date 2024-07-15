@@ -28,20 +28,20 @@ The src folder is separated into various parts required for plugin operation.
 
 - ``symbol_table``: contains a file used to create a symbol table for each open Tamarin file in the editor. The symbol table contains ```TamarinSymbol```,  each symbol is associated with:
 
-<br>
 
-  - A tree node corresponding to the symbol itself, a type, another node corresponding to the context in which this symbol appears (rule, lemma, formula in a lemma), a name and associated range in the tamarin file, an arity if it's a fact or a function, a type if it's a variable (public, fresh ...), and a ``quantified_formula`` node for variables in lemmas.
+
+   - A tree node corresponding to the symbol itself, a type, another node corresponding to the context in which this symbol appears (rule, lemma, formula in a lemma), a name and associated range in the tamarin file, an arity if it's a fact or a function, a type if it's a variable (public, fresh ...), and a ``quantified_formula`` node for variables in lemmas.
 
   <br>
 
   - The various useful node types are listed in the ``DeclarationType`` enumeration.
 
-  <br>
+<br>
 
 - ```features```: Contains all the functionalities
 offered by the plugin .
 
-<br>
+
 
   - ```syntax_error.ts``` is the only file that will parse files that are opened in the vscode editor. Files are re-parsed as soon as they are modified. It also detects semantic errors and initiates creation of a symbol table for each file.
 
