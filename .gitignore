@@ -17,4 +17,3 @@ run.sh
 .gitignore
 
 *.antlr
-./src/grammar/syntax_error.ts
