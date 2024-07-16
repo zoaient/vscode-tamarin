@@ -1,5 +1,8 @@
 # Change Log
 
+## V1.0.1
+Fix package.json
+
 ## V1.0.0
 Initial release after fork from giclu-3.
 
