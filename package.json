@@ -1,6 +1,6 @@
 {
   "name": "tamarin-prover",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -12,7 +12,8 @@
   "publisher": "tamarin-prover",
   "categories": [
     "Programming Languages",
-    "Snippets"
+    "Snippets",
+    "Extension Packs"
   ],
   "activationEvents": [],
   "contributes": {
@@ -150,6 +151,7 @@
     "@types/glob": "^7.1.1",
     "@types/mocha": "^9.1.0",
     "@types/node": "^13.13.52",
+    "prebuildify": "^6.0.0",
     "@types/vscode": "^1.90.0",
     "typescript": "^5.4.5",
     "vscode-test": "^1.3.0"
@@ -170,23 +172,24 @@
   },
   "peerDependenciesMeta": {
     "tree_sitter": {
-      "optional": true
+      "optional": false
     }
   },
   "license": "MIT",
   "files": [
-    "grammar.js",
     "binding.gyp",
     "prebuilds/**",
     "bindings/node/*",
-    "queries/*",
     "src/**",
     "syntaxes/**",
     "out/**",
     "LICENSE",
     "package.json",
     "Readme.md",
-    "images/**"
+    "images/**",
+    "node_modules/vscode-languageclient",
+    "node_modules/web-tree-sitter",
+    "language-configuration.json"
   ],
   "tree-sitter": [
     {
