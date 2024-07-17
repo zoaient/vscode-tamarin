@@ -157,7 +157,7 @@ export enum variable_types{
     TEMP = '#'
 }
 
-export const ReservedFacts: string[] = ['Fr','In','Out','KD','KU','K'] ;
+export const ReservedFacts: string[] = ['Fr','In','Out','KD','KU','K','diff'] ;
 
 const ExistingBuiltIns : string[] = 
 [
@@ -232,7 +232,7 @@ class SymbolTableVisitor{
                 for(let grandchild of child.children){
                     if(grandchild.grammarType === DeclarationType.Macro){
                         this.registerfucntion(grandchild, DeclarationType.Macro, getName(grandchild.child(0),editor),get_macro_arity(grandchild.children),root, get_range(grandchild.child(0),editor))
-                        this.register_facts_searched(grandchild,editor, root,DeclarationType.NARY )
+                        this.register_facts_searched(grandchild,editor, grandchild,DeclarationType.NARY )
                         let eqcount = 0  ;                
                         for(let ggchild of grandchild.children){
                             if(ggchild.grammarType === "="){
@@ -248,7 +248,8 @@ class SymbolTableVisitor{
                         }
                     }
                     else if (grandchild.grammarType === DeclarationType.Equation){ 
-                        this.register_facts_searched(grandchild, editor, root, DeclarationType.NARY);   
+                        check_reserved_facts(grandchild, editor, diags)
+                        this.register_facts_searched(grandchild, editor, grandchild, DeclarationType.NARY);   
                         let eqcount = 0  ;                
                         for(let ggchild of grandchild.children){
                             if(ggchild.grammarType === "="){
@@ -323,7 +324,19 @@ class SymbolTableVisitor{
         let vars: Parser.SyntaxNode[] = find_variables(node);
                 for(let k = 0; k < vars.length; k++){
                     if(vars[k].grammarType === DeclarationType.MVONF){
-                        this.registerident(vars[k], type, getName(vars[k].child(0), editor),root, get_range(vars[k].child(0), editor))
+                        let isregistered = false
+                        for(let symbol of this.symbolTable.getSymbols()){
+                            if(symbol.declaration === DeclarationType.Functions){
+                                if(symbol.name === getName(vars[k], editor)){
+                                    isregistered = true;
+                                    this.registerfucntion(vars[k], DeclarationType.NARY, symbol.name,0,root, get_range(vars[k],editor) )
+                                }
+                            }
+                            else {continue;}
+                        }
+                        if(! isregistered){
+                            this.registerident(vars[k], type, getName(vars[k].child(0), editor),root, get_range(vars[k].child(0), editor))
+                        }
                     }
                     else{
                         this.registerident(vars[k], type, getName(vars[k].child(1), editor),root, get_range(vars[k].child(1), editor), vars[k].child(0)?.grammarType)
@@ -333,7 +346,19 @@ class SymbolTableVisitor{
 
     private register_vars_left_macro_part(node :Parser.SyntaxNode, type : DeclarationType, editor : vscode.TextEditor, root : Parser.SyntaxNode){
         if(node.grammarType === DeclarationType.MVONF){
-            this.registerident(node, type, getName(node.child(0), editor),root, get_range(node.child(0), editor))
+            let isregistered = false
+                        for(let symbol of this.symbolTable.getSymbols()){
+                            if(symbol.declaration === DeclarationType.Functions){
+                                if(symbol.name === getName(node, editor)){
+                                    isregistered = true;
+                                    this.registerfucntion(node, DeclarationType.NARY, symbol.name,0,root, get_range(node,editor) )
+                                }
+                            }
+                            else {continue;}
+                        }
+                        if(! isregistered){
+                            this.registerident(node, type, getName(node.child(0), editor),root, get_range(node.child(0), editor))
+                        }
         }
         else if (node.grammarType === 'pub_var' ||node.grammarType === 'fresh_var' || node.grammarType === 'nat_var'|| node.grammarType === 'temporal_var'){
             this.registerident(node, type, getName(node.child(1), editor),root, get_range(node.child(1), editor), node.child(0)?.grammarType)
@@ -351,7 +376,19 @@ class SymbolTableVisitor{
             }
             if(vars[k].parent !== null){
                 if(vars[k].grammarType === DeclarationType.MVONF ||  (vars[k].grammarType === DeclarationType.TMPV  && vars[k].children.length === 1)){
-                    this.registerident(vars[k], type, getName(vars[k].child(0), editor),context, get_range(vars[k].child(0), editor))
+                    let isregistered = false
+                    for(let symbol of this.symbolTable.getSymbols()){
+                        if(symbol.declaration === DeclarationType.Functions){
+                            if(symbol.name === getName(vars[k], editor)){
+                                isregistered = true;
+                                this.registerfucntion(vars[k], DeclarationType.NARY, symbol.name,0,context, get_range(vars[k],editor) )
+                            }
+                        }
+                        else {continue;}
+                    }
+                    if(! isregistered){
+                        this.registerident(vars[k], type, getName(vars[k].child(0), editor),context, get_range(vars[k].child(0), editor))
+                    }
                 }
                 else{
                     this.registerident(vars[k], type, getName(vars[k].child(1), editor),context,get_range(vars[k].child(1), editor) ,  vars[k].child(0)?.grammarType)
@@ -393,6 +430,10 @@ class SymbolTableVisitor{
                     let arity: number = get_arity(args);
                     this.registerfucntion(vars[k], convert(vars[k].grammarType) , getName(vars[k].child(0),editor),arity, root, get_range(vars[k].child(0),editor))
                 }
+            }
+            else{
+                this.registerfucntion(vars[k], convert(vars[k].grammarType) , getName(vars[k].child(0),editor),0, root, get_range(vars[k].child(0),editor))
+
             }
         }
     }

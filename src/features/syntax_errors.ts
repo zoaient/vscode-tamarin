@@ -191,7 +191,7 @@ export function display_syntax_errors(context: vscode.ExtensionContext): void {
                     if (!fileName) {
                         throw new Error('Could not determine file name');
                     }  
-                    symbolTables.set(fileName, table); 
+                    symbolTables.set(fileName, table);
                 }
             }
         });

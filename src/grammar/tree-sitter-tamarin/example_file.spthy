@@ -10,12 +10,8 @@ Date: 	        June 2024
 theory WideMouthedFrog
 begin
 
-functions : strike/2
 
-equations : strike(a,b) = a + b * 2,
-            femme(bb) = a + b
-
-macros : balabla(a,b,c) = h(a) + b * d 
+equations : Blablac(c,a,b) = c + b + diff(mazvom, vzzvzv)
 
 lemma coucou: 
   

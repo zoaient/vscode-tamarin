@@ -99,6 +99,22 @@ export function check_reserved_facts(node : Parser.SyntaxNode, editor : vscode.T
             else if((fact_name === ReservedFacts[3] || fact_name === ReservedFacts[4] || fact_name === ReservedFacts[5]) && node.parent?.grammarType === 'simple_rule' ){
                 build_warning_display(child, editor, diags,  "You are not supposed to use KD KU or action K in a rule ");
             }
+            else if( fact_name === ReservedFacts[6]){
+                if(get_arity(child.child(2)?.children) != 2){
+                    build_error_display(child, editor, diags, "Error : incorrect arity for diff fact, 2 arguments expected")
+                }
+            }
+        }
+        else if (child.grammarType === 'nary_app'){
+            const fact_name_node = child.child(0);
+            if (fact_name_node !== null && fact_name_node !== undefined) {
+                const fact_name = getName(fact_name_node, editor);
+                if(fact_name === ReservedFacts[6]){
+                    if(node.grammarType === DeclarationType.Equation || node.grammarType === 'mset_term'){
+                        build_warning_display(child, editor, diags , "Warning  :  diff fact cannot be used in an equation")
+                    }
+                }
+            }
         }
         else {
             check_reserved_facts(child, editor, diags)
@@ -226,7 +242,7 @@ function check_variable_is_defined_in_premise(symbol_table : TamarinSymbolTable,
     for( let i = 0 ; i < symbol_table.getSymbols().length; i++){
         let current_symbol = symbol_table.getSymbol(i);
         if(current_symbol.type === '$'){continue};  // Do not take into account public variables
-        if(current_symbol.declaration === DeclarationType.CCLVariable){
+        if(current_symbol.declaration === DeclarationType.CCLVariable || current_symbol.declaration === DeclarationType.ActionFVariable){
             let current_context = current_symbol.context;
             let is_break = false;
             for (let j = 0; j < symbol_table.getSymbols().length; j++){
@@ -243,7 +259,7 @@ function check_variable_is_defined_in_premise(symbol_table : TamarinSymbolTable,
                 }
             }
             if(!is_break){
-                build_error_display(current_symbol.node, editor, diags, "Error: this variable is used in conclusion but doesn't appear in premise");
+                build_error_display(current_symbol.node, editor, diags, "Error: this variable is used in the second part of the rule but doesn't appear in premise");
             }
         }
         else if ((current_symbol.declaration === DeclarationType.LinearF || current_symbol.declaration === DeclarationType.PersistentF) && current_symbol.node.parent?.grammarType === DeclarationType.Premise){
@@ -450,6 +466,18 @@ function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vsc
     }
 }
 
+function check_macro_not_in_equation(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
+    for(let symbol of symbol_table.getSymbols()){
+        if(symbol.declaration === DeclarationType.NARY){
+            for ( let macros of symbol_table.getSymbols()){
+                if(macros.declaration === DeclarationType.Macro && macros.name === symbol.name && symbol.context.grammarType === DeclarationType.Equation){
+                    build_error_display(symbol.node, editor, diags, "Error : a macro shoud not be used in an equation ")
+                }
+            }
+        }
+    }
+}
+
 
 
 const fixMap = new Map<vscode.Diagnostic, vscode.CodeAction>();
@@ -475,4 +503,5 @@ export function checks_with_table(symbol_table : TamarinSymbolTable, editor: vsc
     check_action_fact(symbol_table, editor, diags);
     check_function_macros_and_facts_arity(symbol_table, editor, diags);
     check_free_term_in_lemma(symbol_table, editor, diags);
+    check_macro_not_in_equation(symbol_table, editor, diags)
 };
