@@ -271,7 +271,6 @@ class SymbolTableVisitor{
                 for (let grandchild of child.children){
                     if(grandchild.grammarType === DeclarationType.Builtin && grandchild.child(0) !== null){
                         const builtinType = grandchild.child(0)?.grammarType ?? '';
-                        if(builtinType === 'asymmetric-encryption'||'signing'||'revealing-signing'){ pkcount ++ }
                         this.registerident(grandchild, DeclarationType.Builtin, builtinType, root, get_range(grandchild, editor));
                         const built_in_index = ExistingBuiltIns.indexOf(builtinType);
                         if(built_in_index > 0){
@@ -282,6 +281,7 @@ class SymbolTableVisitor{
                                 this.registerfucntion(grandchild, DeclarationType.Functions, AssociatedFunctions[built_in_index][k], parseInt(AssociatedFunctions[built_in_index][k+1]), root, get_range(grandchild, editor));
                             }
                         }
+                        if(builtinType === 'asymmetric-encryption'||'signing'||'revealing-signing'){ pkcount ++ }
                     }
                     
                 }

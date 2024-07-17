@@ -356,20 +356,34 @@ function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable
         }
     }
     for(let symbol of known_functions){
-        let isbreak = false
+        let isbreak = false;
         if(symbol.declaration === DeclarationType.NARY){
-            for( let functions of known_functions){
-                if(functions.name === symbol.name && functions !== symbol){
+            for( let functionSymbol of known_functions){
+                if(functionSymbol.name === symbol.name && functionSymbol !== symbol){
                     isbreak = true;
                     break;
                 }
+                if (typeof symbol.name === 'string' && typeof functionSymbol.name === 'string' && symbol.name !== functionSymbol.name && symbol.arity === functionSymbol.arity) {
+                    const distance = levenshteinDistance(symbol.name, functionSymbol.name);
+                    if (distance < 3) { // threshold value
+                        const diagnostic = build_warning_display(symbol.node, editor, diags, "Warning: did you mean " + functionSymbol.name + " ? (" + distance + "characters away)");
+                        diagnostic.code = "wrongFunctionName";
+                        const range = symbol.name_range;
+                        const fix = new vscode.CodeAction("Replace with " + functionSymbol.name, vscode.CodeActionKind.QuickFix);
+                        fix.edit = new vscode.WorkspaceEdit();
+                        fix.edit.replace(editor.document.uri, range, functionSymbol.name);
+                        fix.diagnostics = [diagnostic];
+                        fix.isPreferred = true;
+                        fixMap.set(diagnostic, fix);
+                    }
+                }
             }
             if(!isbreak){
-                build_error_display(symbol.node, editor, diags, "Error : unknown function or macro")
+                build_error_display(symbol.node, editor, diags, "Error : unknown function or macro");
             }
         }
     }
-}
+}    
 
 function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     let lemma_vars : TamarinSymbol[] = [];
