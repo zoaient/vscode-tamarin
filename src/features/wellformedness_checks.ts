@@ -110,15 +110,16 @@ export function check_reserved_facts(node : Parser.SyntaxNode, editor : vscode.T
 //A optimiser peut être 
 function check_variables_type_is_consistent_inside_a_rule(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags:vscode.Diagnostic[]){
     for (let i = 0 ; i < symbol_table.getSymbols().length; i++){
-        if(symbol_table.getSymbol(i).declaration === DeclarationType.PRVariable || symbol_table.getSymbol(i).declaration === DeclarationType.CCLVariable || symbol_table.getSymbol(i).declaration === DeclarationType.ActionFVariable ){
+        let current_symbol = symbol_table.getSymbol(i);
+        if(current_symbol.declaration === DeclarationType.PRVariable || current_symbol.declaration === DeclarationType.CCLVariable || current_symbol.declaration === DeclarationType.ActionFVariable ){
             for(let j = 0; j < symbol_table.getSymbols().length; j++){
-                if((symbol_table.getSymbol(i).declaration === DeclarationType.PRVariable || symbol_table.getSymbol(i).declaration === DeclarationType.CCLVariable || symbol_table.getSymbol(i).declaration === DeclarationType.ActionFVariable) && i !== j){
-                    if(symbol_table.getSymbol(i).context === symbol_table.getSymbol(j).context && symbol_table.getSymbol(i).name === symbol_table.getSymbol(j).name){
-                        if(symbol_table.getSymbol(i).type === symbol_table.getSymbol(j).type){
+                if((current_symbol.declaration === DeclarationType.PRVariable || current_symbol.declaration === DeclarationType.CCLVariable || current_symbol.declaration === DeclarationType.ActionFVariable) && i !== j){
+                    if(current_symbol.context === symbol_table.getSymbol(j).context && current_symbol.name === symbol_table.getSymbol(j).name){
+                        if(current_symbol.type === symbol_table.getSymbol(j).type){
                             continue;
                         }
                         else{
-                            build_error_display(symbol_table.getSymbol(i).node, editor, diags, "Error: inconsistent variables, variables with the same name in the same rule must have same types ");
+                            build_error_display(current_symbol.node, editor, diags, "Error: inconsistent variables, variables with the same name in the same rule must have same types ");
                             break;
                         }
                     }
@@ -129,6 +130,30 @@ function check_variables_type_is_consistent_inside_a_rule(symbol_table : Tamarin
                 else{
                     continue;
                 }
+            }
+        }
+        else if (current_symbol.declaration === DeclarationType.REquationVariable){
+            let isbreak = false;
+            for (let symbol of symbol_table.getSymbols()){
+                if(symbol.declaration === DeclarationType.LEquationVariable && symbol.name === current_symbol.name && symbol.context === current_symbol.context){
+                    isbreak = true;
+                    break;
+                }
+            }
+            if (!isbreak){
+                build_error_display(current_symbol.node, editor, diags, "Error : this variable doesn't exist on the left side of the equation")
+            }
+        }
+        else if (current_symbol.declaration === DeclarationType.RMacroVariable){
+            let isbreak = false;
+            for (let symbol of symbol_table.getSymbols()){
+                if(symbol.declaration === DeclarationType.LMacroVariable && symbol.name === current_symbol.name && symbol.context === current_symbol.context){
+                    isbreak = true;
+                    break;
+                }
+            }
+            if (!isbreak){
+                build_error_display(current_symbol.node, editor, diags, "Error : this variable doesn't exist on the left side of the equation")
             }
         }
         else{
@@ -159,8 +184,6 @@ function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor: vscod
                     continue;
                 }
                 //---------
-                let closestName = "";
-                let closestDistance = Number.MAX_VALUE;
                 for( let j = 0; j < facts.length ; j++ ){
                     const name2 = facts[j];
                     if(name2){
@@ -168,24 +191,19 @@ function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor: vscod
                             continue;
                         }
                         const distance = levenshteinDistance(name, name2);
-                        if (distance < closestDistance) {
-                            closestName = name2;
-                            closestDistance = distance;
+                        if (distance < 3 && !facts.includes(current_symbol.name)) { // threshold value
+                            const diagnostic = build_warning_display(current_symbol.node, editor, diags, "Warning: did you mean " + name2 + " ? (" + distance + "characters away)")
+                            diagnostic.code = "wrongFactName";
+                            const range = current_symbol.name_range;
+                            const fix = new vscode.CodeAction("Replace with " + name2, vscode.CodeActionKind.QuickFix);
+                            fix.edit = new vscode.WorkspaceEdit();
+                            fix.edit.replace(editor.document.uri, range, name2);
+                            fix.diagnostics = [diagnostic];
+                            fix.isPreferred = true;
+                            fixMap.set(diagnostic, fix);
+                            count ++
                         }
                     }
-                }
-                if (closestDistance < 3 && !facts.includes(current_symbol.name)) { // threshold value
-                    const diagnostic = build_warning_display(current_symbol.node, editor, diags, "Warning: did you mean " + closestName + " ? (" + closestDistance + "characters away)")
-                    diagnostic.code = "wrongFactName";
-                    const range = current_symbol.name_range;
-                    const fix = new vscode.CodeAction("Replace with " + closestName, vscode.CodeActionKind.QuickFix);
-                    fix.edit = new vscode.WorkspaceEdit();
-                    fix.edit.replace(editor.document.uri, range, closestName);
-                    fix.diagnostics = [diagnostic];
-                    fix.isPreferred = true;
-                    fixMap.set(diagnostic, fix);
-                    count ++
-                    break;
                 }
             }
         }

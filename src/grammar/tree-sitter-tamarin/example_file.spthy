@@ -10,13 +10,13 @@ Date: 	        June 2024
 theory WideMouthedFrog
 begin
 
-builtins : hashing, symmetric-encryption
-macros: hashedxor(x, y, z) = h(x ⊕ y ⊕ z),
-        coucou(x) = bonjour(x)
+functions : strike/2
 
-restriction equality:
-  "All x y #i. Eq(x,y)@i ==> x=y"
-  
-lemma coucou: " "
+equations : strike(a,b) = a + b * 2,
+            femme(bb) = a + b
+
+macros : balabla(a,b,c) = h(a) + b * d 
+
+lemma coucou: 
   
 end

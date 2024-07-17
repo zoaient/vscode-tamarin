@@ -109,12 +109,16 @@ export enum DeclarationType{
     PRVariable = 'premise_variable',
     ActionFVariable = 'action_fact_variable',
     LemmaVariable = 'lemma_variable',
-    MacroVariable = 'macro_variable',
+    LMacroVariable = 'left_macro_variable',
+    RMacroVariable = 'right_macro_variable',
+    LEquationVariable  = 'left_equation_variable',
+    REquationVariable  = 'right_equation_variable',
     RestrictionVariable = 'restriction_variable',
 
     Builtins = 'built_ins',
     Functions = 'functions',
     Macros = 'macros',
+    Equations = 'equations',
     QF = 'quantified_formula',
     NF = 'nested_formula',
     Let  = 'let',
@@ -138,6 +142,7 @@ export enum DeclarationType{
     NARY = 'nary_app',
     DEFAULT = 'default',
     Macro = 'macro',
+    Equation = 'equation'
 };
 function convert(grammar_type : string) : DeclarationType{
     if(grammar_type === 'nary_app'){return DeclarationType.NARY}
@@ -223,13 +228,42 @@ class SymbolTableVisitor{
                     }
                 }
             }
-            else if( child?.grammarType === DeclarationType.Macros){
+            else if( child?.grammarType === DeclarationType.Macros || child?.grammarType === DeclarationType.Equations){
                 for(let grandchild of child.children){
                     if(grandchild.grammarType === DeclarationType.Macro){
                         this.registerfucntion(grandchild, DeclarationType.Macro, getName(grandchild.child(0),editor),get_macro_arity(grandchild.children),root, get_range(grandchild.child(0),editor))
-                        this.register_vars_rule(grandchild, DeclarationType.MacroVariable, editor, grandchild)
                         this.register_facts_searched(grandchild,editor, root,DeclarationType.NARY )
+                        let eqcount = 0  ;                
+                        for(let ggchild of grandchild.children){
+                            if(ggchild.grammarType === "="){
+                                eqcount ++ ;
+                            }
+                            if(eqcount === 0){
+                                this.register_vars_left_macro_part(ggchild, DeclarationType.LMacroVariable, editor, grandchild);
+                            }
+                            else{
+                                this.register_vars_rule(ggchild, DeclarationType.RMacroVariable, editor, grandchild);
+
+                            }
+                        }
                     }
+                    else if (grandchild.grammarType === DeclarationType.Equation){ 
+                        this.register_facts_searched(grandchild, editor, root, DeclarationType.NARY);   
+                        let eqcount = 0  ;                
+                        for(let ggchild of grandchild.children){
+                            if(ggchild.grammarType === "="){
+                                eqcount ++ ;
+                            }
+                            if(eqcount === 0){
+                                this.register_vars_rule(ggchild, DeclarationType.LEquationVariable, editor, grandchild);
+                            }
+                            else{
+                                this.register_vars_rule(ggchild, DeclarationType.REquationVariable, editor, grandchild);
+
+                            }
+                        }
+                    }
+
                 }
             }
             else if (child?.grammarType === DeclarationType.Builtins){
@@ -295,6 +329,15 @@ class SymbolTableVisitor{
                         this.registerident(vars[k], type, getName(vars[k].child(1), editor),root, get_range(vars[k].child(1), editor), vars[k].child(0)?.grammarType)
                     }
                 }
+    }
+
+    private register_vars_left_macro_part(node :Parser.SyntaxNode, type : DeclarationType, editor : vscode.TextEditor, root : Parser.SyntaxNode){
+        if(node.grammarType === DeclarationType.MVONF){
+            this.registerident(node, type, getName(node.child(0), editor),root, get_range(node.child(0), editor))
+        }
+        else if (node.grammarType === 'pub_var' ||node.grammarType === 'fresh_var' || node.grammarType === 'nat_var'|| node.grammarType === 'temporal_var'){
+            this.registerident(node, type, getName(node.child(1), editor),root, get_range(node.child(1), editor), node.child(0)?.grammarType)
+        }
     }
 
     private register_vars_lemma(node :Parser.SyntaxNode, type : DeclarationType, editor : vscode.TextEditor){
