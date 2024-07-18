@@ -14,7 +14,7 @@ export const createSymbolTable = (root : Parser.SyntaxNode, editor :vscode.TextE
     const symbolTableVisitor = new SymbolTableVisitor();
     let symbolTable = symbolTableVisitor.visit(root, editor, diags);
     convert_linear_facts(symbolTable);
-    checks_with_table(symbolTable, editor, diags)
+    checks_with_table(symbolTable, editor, diags, root)
     diagCollection.set(editor.document.uri, diags)
     return {symbolTable};
 };

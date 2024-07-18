@@ -23,7 +23,7 @@ async function replace_symbol(symbol : TamarinSymbol, editor : vscode.TextEditor
   const newNameLength = newName.length;
   const newRange = new vscode.Range(
     range.start,
-    editor.document.positionAt(editor.document.offsetAt(range.start) + newNameLength)
+    editor.document.positionAt(editor.document.offsetAt(range.start) + newNameLength - oldNameLength)
   );
   const edit = new vscode.WorkspaceEdit();
   edit.replace(editor.document.uri, range, newText);

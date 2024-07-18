@@ -432,7 +432,8 @@ function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vsc
                     gt_list = get_child_grammar_type(search_context);
                     } 
                 }
-                if(search_context.grammarType === DeclarationType.Lemma || search_context.grammarType === DeclarationType.Restriction){
+                // En même temps on définit le contexte pour le rename 
+                if(search_context.grammarType === DeclarationType.Lemma || search_context.grammarType === DeclarationType.Restriction || search_context.grammarType === 'diff_lemma'){
                     set_associated_qf(lemma_vars[i], search_context.child(4));
                 }
                 else if(search_context.grammarType === DeclarationType.NF){
@@ -479,6 +480,49 @@ function check_macro_not_in_equation(symbol_table : TamarinSymbolTable, editor: 
 }
 
 
+function return_builtins(symbol_table: TamarinSymbolTable): string[]{
+let builtins : string[]  = [];
+    for (let symbol of symbol_table.getSymbols()){
+        if(symbol.declaration === DeclarationType.Builtin){
+            if(symbol.name)
+            builtins.push(symbol.name);
+        }
+    } 
+    return builtins;
+}
+
+function check_infix_operators(symbol_table : TamarinSymbolTable, editor : vscode.TextEditor, diags : vscode.Diagnostic[], root : Parser.SyntaxNode){
+
+    function display_infix_error(builtin : string, symbol : string, child : Parser.SyntaxNode):void {
+        let current_builtins = return_builtins(symbol_table);
+            if(! current_builtins.includes(builtin)){
+                build_error_display(child, editor, diags, "Error : symbol "+ symbol +" cannot be used without "+ builtin +" builtin")
+            }
+    }
+
+    for (let child of root.children){
+        if(child.grammarType === '^' || child.grammarType === '*'){
+            let current_builtins = return_builtins(symbol_table);
+            if(! current_builtins.includes('diffie-hellman')){
+                build_error_display(child, editor, diags, "Error : symbols ^ or * cannot be used without diffie-hellman builtin")
+            }
+        }
+        else if (child.grammarType === '⊕'){
+            display_infix_error('xor','⊕', child);
+        }
+        else if (child.grammarType === '++'){
+            display_infix_error('multiset', '++', child);
+        }
+        else if (child.grammarType === '%+'){
+            display_infix_error('natural-numbers', '%+', child)
+        }
+        else (check_infix_operators(symbol_table,editor,diags,child));
+    }
+
+
+}
+
+
 
 const fixMap = new Map<vscode.Diagnostic, vscode.CodeAction>();
 
@@ -496,7 +540,7 @@ vscode.languages.registerCodeActionsProvider('tamarin', {
 });
 
 
-export function checks_with_table(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
+export function checks_with_table(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[], root : Parser.SyntaxNode){
     check_variables_type_is_consistent_inside_a_rule(symbol_table, editor, diags);
     check_case_sensitivity(symbol_table, editor, diags);
     check_variable_is_defined_in_premise(symbol_table, editor, diags);
@@ -504,4 +548,5 @@ export function checks_with_table(symbol_table : TamarinSymbolTable, editor: vsc
     check_function_macros_and_facts_arity(symbol_table, editor, diags);
     check_free_term_in_lemma(symbol_table, editor, diags);
     check_macro_not_in_equation(symbol_table, editor, diags)
+    check_infix_operators(symbol_table, editor, diags, root);
 };
