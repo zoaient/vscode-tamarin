@@ -6,13 +6,14 @@ import { getName } from './syntax_errors';
 
 
 
-function build_error_display(node : Parser.SyntaxNode, editeur: vscode.TextEditor, diags : vscode.Diagnostic[], message : string){
+function build_error_display(node : Parser.SyntaxNode, editeur: vscode.TextEditor, diags : vscode.Diagnostic[], message : string): vscode.Diagnostic{
     let start = node.startIndex;
     let end  = node.endIndex;
     let positionStart = editeur.document.positionAt(start);
     let positionEnd = editeur.document.positionAt(end);
     let diag = new vscode.Diagnostic(new vscode.Range(positionStart, positionEnd ), message, vscode.DiagnosticSeverity.Error);
-    diags.push(diag)
+    diags.push(diag);
+    return diag;
 }
 
 function build_warning_display(node : Parser.SyntaxNode, editeur: vscode.TextEditor, diags : vscode.Diagnostic[], message : string): vscode.Diagnostic{
@@ -21,8 +22,8 @@ function build_warning_display(node : Parser.SyntaxNode, editeur: vscode.TextEdi
     let positionStart = editeur.document.positionAt(start);
     let positionEnd = editeur.document.positionAt(end);
     let diag = new vscode.Diagnostic(new vscode.Range(positionStart, positionEnd ), message, vscode.DiagnosticSeverity.Warning);
-    diags.push(diag)
-    return diag
+    diags.push(diag);
+    return diag;
 }
 
 
@@ -480,32 +481,89 @@ function check_macro_not_in_equation(symbol_table : TamarinSymbolTable, editor: 
 }
 
 
-function return_builtins(symbol_table: TamarinSymbolTable): string[]{
-let builtins : string[]  = [];
+function return_builtins(symbol_table: TamarinSymbolTable): TamarinSymbol[]{
+let builtins : TamarinSymbol[]  = [];
     for (let symbol of symbol_table.getSymbols()){
         if(symbol.declaration === DeclarationType.Builtin){
-            if(symbol.name)
-            builtins.push(symbol.name);
+            builtins.push(symbol);
         }
     } 
     return builtins;
 }
 
+function get_builtins_name(builtins : TamarinSymbol[]): string[]{
+    let Sbuiltins : string[] = [];
+    for (let builtin of builtins ){
+        if(builtin.name)
+        Sbuiltins.push(builtin.name)
+    }
+    return Sbuiltins;
+}
+
 function check_infix_operators(symbol_table : TamarinSymbolTable, editor : vscode.TextEditor, diags : vscode.Diagnostic[], root : Parser.SyntaxNode){
 
-    function display_infix_error(builtin : string, symbol : string, child : Parser.SyntaxNode):void {
+    function display_infix_error(builtin: string, symbol: string, child: Parser.SyntaxNode): void {
         let current_builtins = return_builtins(symbol_table);
-            if(! current_builtins.includes(builtin)){
-                build_error_display(child, editor, diags, "Error : symbol "+ symbol +" cannot be used without "+ builtin +" builtin")
+        if (!get_builtins_name(current_builtins).includes(builtin)) {
+            const diagnostic = build_error_display(child, editor, diags, "Error : symbol " + symbol + " cannot be used without " + builtin + " builtin");
+            diagnostic.code = "missingBuiltin";
+            const fix = new vscode.CodeAction("Include builtin : " + builtin, vscode.CodeActionKind.QuickFix);
+            if(current_builtins.length > 0){
+            const range = current_builtins[current_builtins.length - 1].name_range; 
+            fix.edit = new vscode.WorkspaceEdit();
+            fix.edit.insert(editor.document.uri, range.end, ", " + builtin); 
             }
-    }
-
+            else {
+                let theory = root ;
+                while (theory.grammarType !== 'theory'){
+                    if(theory.parent)
+                    theory = theory.parent
+                }
+                theory = theory.child(3) as Parser.SyntaxNode
+                const range = new vscode.Range(
+                    editor.document.positionAt(theory.startIndex),
+                    editor.document.positionAt(theory.endIndex)
+                );
+                fix.edit = new vscode.WorkspaceEdit();
+                fix.edit.insert(editor.document.uri, range.end, "\nbuiltins :  " + builtin);
+            }
+            fix.diagnostics = [diagnostic];
+            fix.isPreferred = true;
+            fixMap.set(diagnostic, fix);     
+        }
+      }
+      
     for (let child of root.children){
         if(child.grammarType === '^' || child.grammarType === '*'){
             let current_builtins = return_builtins(symbol_table);
-            if(! current_builtins.includes('diffie-hellman')){
-                build_error_display(child, editor, diags, "Error : symbols ^ or * cannot be used without diffie-hellman builtin")
-            }
+            //pas très beau
+            if(! get_builtins_name(current_builtins).includes('diffie-hellman')){
+                const diagnostic = build_error_display(child, editor, diags, "Error : symbols ^ or * cannot be used without diffie-hellman builtin")
+                diagnostic.code = "missingBuiltin";
+                const fix = new vscode.CodeAction("Include builtin : diffie-hellman", vscode.CodeActionKind.QuickFix);
+                if(current_builtins.length > 0){
+                const range = current_builtins[current_builtins.length - 1].name_range; 
+                fix.edit = new vscode.WorkspaceEdit();
+                fix.edit.insert(editor.document.uri, range.end, ", diffie-hellman" ); 
+                }
+                else {
+                    let theory = root ;
+                    while (theory.grammarType !== 'theory'){
+                        if(theory.parent)
+                        theory = theory.parent
+                    }
+                    theory = theory.child(3) as Parser.SyntaxNode
+                    const range = new vscode.Range(
+                        editor.document.positionAt(theory.startIndex),
+                        editor.document.positionAt(theory.endIndex)
+                    );
+                    fix.edit = new vscode.WorkspaceEdit();
+                    fix.edit.insert(editor.document.uri, range.end, "\nbuiltins :  diffie-hellman" );
+                }
+                fix.diagnostics = [diagnostic];
+                fix.isPreferred = true;
+                fixMap.set(diagnostic, fix);     
+                }
         }
         else if (child.grammarType === '⊕'){
             display_infix_error('xor','⊕', child);
@@ -522,31 +580,30 @@ function check_infix_operators(symbol_table : TamarinSymbolTable, editor : vscod
 
 }
 
-
-
 const fixMap = new Map<vscode.Diagnostic, vscode.CodeAction>();
 
+// Register the code action provider
 vscode.languages.registerCodeActionsProvider('tamarin', {
-    provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext, token: vscode.CancellationToken) {
-        const actions: vscode.CodeAction[] = [];
-        for (const diagnostic of context.diagnostics) {
-            const fix = fixMap.get(diagnostic);
-            if (fix) {
-                actions.push(fix);
-            }
-        }
-        return actions;
+  provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext, token: vscode.CancellationToken) {
+    const actions: vscode.CodeAction[] = [];
+    for (const diagnostic of context.diagnostics) {
+      const fix = fixMap.get(diagnostic);
+      if (fix) {
+        actions.push(fix);
+      }
     }
+    return actions;
+  }
 });
-
 
 export function checks_with_table(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[], root : Parser.SyntaxNode){
     check_variables_type_is_consistent_inside_a_rule(symbol_table, editor, diags);
-    check_case_sensitivity(symbol_table, editor, diags);
     check_variable_is_defined_in_premise(symbol_table, editor, diags);
     check_action_fact(symbol_table, editor, diags);
     check_function_macros_and_facts_arity(symbol_table, editor, diags);
     check_free_term_in_lemma(symbol_table, editor, diags);
     check_macro_not_in_equation(symbol_table, editor, diags)
     check_infix_operators(symbol_table, editor, diags, root);
+    check_case_sensitivity(symbol_table, editor, diags);
 };
+
