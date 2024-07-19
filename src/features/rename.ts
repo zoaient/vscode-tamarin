@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 import { symbolTables } from './syntax_errors';
-import { DeclarationType, TamarinSymbol, TamarinSymbolTable } from '../symbol_table/create_symbol_table';
+import { CreateSymbolTableResult, DeclarationType, TamarinSymbol, TamarinSymbolTable } from '../symbol_table/create_symbol_table';
 
 export function get_symbol(range : vscode.Range, symbol_table : TamarinSymbolTable): TamarinSymbol|null{
     for (let k = 0 ; k < symbol_table.getSymbols().length; k++){
@@ -11,7 +11,8 @@ export function get_symbol(range : vscode.Range, symbol_table : TamarinSymbolTab
     return null;
 }
 
-async function replace_symbol(symbol : TamarinSymbol, editor : vscode.TextEditor, newName : string ){
+/* Function used to replace a symbol by the user choice*/ 
+async function replace_symbol(symbol : TamarinSymbol, editor : vscode.TextEditor, newName : string ): Promise<void>{
   if (symbol.name === undefined) {
     console.error("Cannot replace symbol with undefined name");
     return;
@@ -50,7 +51,7 @@ export function RenameCommand(context : vscode.ExtensionContext){
 
         const activeFile = activeEditor.document.uri.path.split('/').pop(); 
         if(activeFile){
-            const symbolTable = symbolTables.get(activeFile);
+            const symbolTable : CreateSymbolTableResult|undefined = symbolTables.get(activeFile);
             if (!symbolTable) {
                 vscode.window.showErrorMessage("No symbol table for this file");
                 return;

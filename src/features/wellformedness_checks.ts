@@ -27,8 +27,9 @@ function build_warning_display(node : Parser.SyntaxNode, editeur: vscode.TextEdi
 }
 
 
-
-function levenshteinDistance(s1: string , s2 : string) {
+/* Function used to compare the distance between two strings,
+ returns the minimum operations required to convert the first string into the second one */
+function levenshteinDistance(s1: string , s2 : string): number {
     const matrix = [];
 
     // increment along the first column of each row
@@ -61,6 +62,7 @@ function levenshteinDistance(s1: string , s2 : string) {
     return matrix[s2.length][s1.length];
 }
 
+// Function to get the grammar type of a node 
 function get_child_grammar_type(node :Parser.SyntaxNode): string[]{
     let results : string[] = []
     for(let child of node.children) {
@@ -69,7 +71,9 @@ function get_child_grammar_type(node :Parser.SyntaxNode): string[]{
     return results;
 }
 
-export function check_reserved_facts(node : Parser.SyntaxNode, editor : vscode.TextEditor, diags : vscode.Diagnostic[]){
+/* Function used to perform checks on all reserved facts,
+ checks if they are in the wright place and used with the correct arity */
+export function check_reserved_facts(node : Parser.SyntaxNode, editor : vscode.TextEditor, diags : vscode.Diagnostic[]): void{
     for(let child of node.children){
         if(child.grammarType === DeclarationType.LinearF ||child.grammarType === DeclarationType.PersistentF){
             const fact_name = getName(child.child(0), editor);
@@ -124,8 +128,10 @@ export function check_reserved_facts(node : Parser.SyntaxNode, editor : vscode.T
     
 };
 
+/* Function used to check if all variables with the same name  in a rule have the same type,
+Also checks that if a variables is in the right side of a macro or equation it is also present in the left side  */
 //A optimiser peut être 
-function check_variables_type_is_consistent_inside_a_rule(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags:vscode.Diagnostic[]){
+function check_variables_type_is_consistent_inside_a_rule(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags:vscode.Diagnostic[]) : void{
     for (let i = 0 ; i < symbol_table.getSymbols().length; i++){
         let current_symbol = symbol_table.getSymbol(i);
         if(current_symbol.declaration === DeclarationType.PRVariable || current_symbol.declaration === DeclarationType.CCLVariable || current_symbol.declaration === DeclarationType.ActionFVariable ){
@@ -179,7 +185,8 @@ function check_variables_type_is_consistent_inside_a_rule(symbol_table : Tamarin
     }
 };
 
-function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
+/* Function used to check the speling of facts, also provides a quick fix for the wrong ones using leverstein distance */
+function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]): void{
     const facts : TamarinSymbol["name"][]  = [];
     let count = 0;
     for( let i = 0 ; i < symbol_table.getSymbols().length; i++){
@@ -230,16 +237,9 @@ function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor: vscod
 
 
 
-
-
-
-
-
-
-
-
-
-function check_variable_is_defined_in_premise(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
+/* Function used to check if a variable present in an action fact or conclusion is also present in premise,
+also checks if a fact in premise appears in a conclusion somewhere else */ 
+function check_variable_is_defined_in_premise(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]):void{
     for( let i = 0 ; i < symbol_table.getSymbols().length; i++){
         let current_symbol = symbol_table.getSymbol(i);
         if(current_symbol.type === '$'){continue};  // Do not take into account public variables
@@ -280,6 +280,7 @@ function check_variable_is_defined_in_premise(symbol_table : TamarinSymbolTable,
     }
 }
 
+/* This function performs various checks on action facts : wether they are declared ord not and if the arity is correct */ 
 function check_action_fact(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     let actionFacts: TamarinSymbol[] = [];
     let errors : string[] = []
@@ -318,6 +319,8 @@ function check_action_fact(symbol_table : TamarinSymbolTable, editor: vscode.Tex
     }
 }
 
+/* Function to check macros, functions, facts arity and to provide
+ quick fixes for wrong function name still using leverstein distance */
 function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     let known_functions : TamarinSymbol[] = [];
     let errors : string[] = []
@@ -402,6 +405,7 @@ function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable
     }
 }    
 
+/* Function used to check if a term is associated to qa quantified formula in a lemma */ 
 function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     let lemma_vars : TamarinSymbol[] = [];
     for (let symbol of symbol_table.getSymbols()){
@@ -433,7 +437,7 @@ function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vsc
                     gt_list = get_child_grammar_type(search_context);
                     } 
                 }
-                // En même temps on définit le contexte pour le rename 
+                // Simultaneously defining context for rename feature
                 if(search_context.grammarType === DeclarationType.Lemma || search_context.grammarType === DeclarationType.Restriction || search_context.grammarType === 'diff_lemma'){
                     set_associated_qf(lemma_vars[i], search_context.child(4));
                 }
@@ -468,6 +472,7 @@ function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vsc
     }
 }
 
+/* Function to check that a macro is not used in an equation */ 
 function check_macro_not_in_equation(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     for(let symbol of symbol_table.getSymbols()){
         if(symbol.declaration === DeclarationType.NARY){
@@ -480,7 +485,7 @@ function check_macro_not_in_equation(symbol_table : TamarinSymbolTable, editor: 
     }
 }
 
-
+/* Given a symbol table returns all the builtins present in it */ 
 function return_builtins(symbol_table: TamarinSymbolTable): TamarinSymbol[]{
 let builtins : TamarinSymbol[]  = [];
     for (let symbol of symbol_table.getSymbols()){
@@ -491,6 +496,7 @@ let builtins : TamarinSymbol[]  = [];
     return builtins;
 }
 
+/* Given a list of builtins returns there name */
 function get_builtins_name(builtins : TamarinSymbol[]): string[]{
     let Sbuiltins : string[] = [];
     for (let builtin of builtins ){
@@ -500,6 +506,8 @@ function get_builtins_name(builtins : TamarinSymbol[]): string[]{
     return Sbuiltins;
 }
 
+/* Function used to check if the use of * ^ or others symbol is allowed, if not provides a quick fix to include the right builtin,
+Also works with functions defined in builtins*/ 
 function check_infix_operators(symbol_table : TamarinSymbolTable, editor : vscode.TextEditor, diags : vscode.Diagnostic[], root : Parser.SyntaxNode){
 
     function display_infix_error(builtin: string, symbol: string, child: Parser.SyntaxNode): void {

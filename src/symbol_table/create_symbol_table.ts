@@ -3,29 +3,37 @@ import Parser = require("web-tree-sitter");
 import {getName} from '../features/syntax_errors'
 import { check_reserved_facts, checks_with_table } from '../features/wellformedness_checks';
 import { Diagnostic } from 'vscode';
+import { rootCertificates } from 'tls';
 
 export type CreateSymbolTableResult = {
     symbolTable: TamarinSymbolTable
 };
 
+/* Function used to register the symbol table for each file */ 
 let diagCollection = vscode.languages.createDiagnosticCollection('Tamarin');
 export const createSymbolTable = (root : Parser.SyntaxNode, editor :vscode.TextEditor): CreateSymbolTableResult => {
     let diags: Diagnostic[] = []; 
     const symbolTableVisitor = new SymbolTableVisitor();
     let symbolTable = symbolTableVisitor.visit(root, editor, diags);
+    symbolTable.setRootNodeEditorDiags(root, editor, diags);
     convert_linear_facts(symbolTable);
     checks_with_table(symbolTable, editor, diags, root)
     diagCollection.set(editor.document.uri, diags)
     return {symbolTable};
 };
 
+/* Given the tree structure persistent facts are just linear facts with a ! as left sibling 
+function used to set the right type */
 function convert_linear_facts(ts : TamarinSymbolTable){
     for (let symbol of ts.getSymbols()){
         if(symbol.declaration === DeclarationType.LinearF && symbol.node.previousSibling?.grammarType === "!"){
             symbol.declaration = DeclarationType.PersistentF;
+            
         }
     }
 }
+/* Function used to find all variables given a  tree node it will search through all sons,
+used to find lemma or rule vars for example  */ 
 function find_variables(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     let vars : Parser.SyntaxNode[] = []
     for( let child of node.children){
@@ -40,6 +48,7 @@ function find_variables(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     return vars;  
 }
 
+/* Same as the above function but for facts or functions*/
 function find_linear_fact(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     let vars : Parser.SyntaxNode[] = []
     for( let child of node.children){
@@ -67,6 +76,8 @@ function find_narry(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     }  
     return vars;  
 }
+
+/* Given a function or fact node returns his arity*/
 export function get_arity(node : Parser.SyntaxNode[]|undefined): number{
     let arity: number = 0;
     if(node)
@@ -78,6 +89,7 @@ export function get_arity(node : Parser.SyntaxNode[]|undefined): number{
     return arity;
 }
 
+/* Same as above but for macros */
 export function get_macro_arity(node : Parser.SyntaxNode[]|undefined): number{
     let arity: number = -1;
     if(node)
@@ -98,7 +110,7 @@ export function get_range(node : Parser.SyntaxNode|null, editor : vscode.TextEdi
     const range = new vscode.Range(startPos, endPos);
     return range
     }
-    //inutile normalement 
+    //usually useless  
     return new vscode.Range(editor.document.positionAt(0), editor.document.positionAt(0))
 }
 
@@ -144,6 +156,7 @@ export enum DeclarationType{
     Macro = 'macro',
     Equation = 'equation'
 };
+
 function convert(grammar_type : string) : DeclarationType{
     if(grammar_type === 'nary_app'){return DeclarationType.NARY}
     else if(grammar_type === 'linear_fact'){return DeclarationType.LinearF}
@@ -197,7 +210,7 @@ class SymbolTableVisitor{
         return this.symbolTable;
     };
 
-    
+    /* Method that builds the symbol table adding every symbols while visiting the AST*/
     public visit(root : Parser.SyntaxNode, editor : vscode.TextEditor, diags: vscode.Diagnostic[]): TamarinSymbolTable{
         for (let i = 0; i < root.children.length; i++){
             const child = root.child(i);
@@ -397,6 +410,7 @@ class SymbolTableVisitor{
         }
     }
 
+    /* Function unsed to register the facts found with find_linear_fact*/
     private register_facts_searched(node :Parser.SyntaxNode, editor : vscode.TextEditor, root : Parser.SyntaxNode, type ?: DeclarationType){
         let vars: Parser.SyntaxNode[] = find_linear_fact(node);
         for(let k = 0; k < vars.length; k++){
@@ -418,6 +432,7 @@ class SymbolTableVisitor{
         }
     }
 
+    /* Same as above but for functions */
     private register_narry(node :Parser.SyntaxNode, editor : vscode.TextEditor, root : Parser.SyntaxNode){
         let vars: Parser.SyntaxNode[] = find_narry(node);
         for(let k = 0; k < vars.length; k++){
@@ -439,7 +454,7 @@ class SymbolTableVisitor{
     }
 
 
-
+    /* Same as above but for identifiers */
     private registerident(ident : Parser.SyntaxNode|null|undefined, declaration: DeclarationType, name : string|undefined,  context : Parser.SyntaxNode, range : vscode.Range, type ?: string ){
         if(!ident){
             return;
@@ -493,6 +508,12 @@ export function set_associated_qf(symbol : TamarinSymbol, node : Parser.SyntaxNo
 export class TamarinSymbolTable{
     private symbols : TamarinSymbol[] = [];
 
+    private root_node!: Parser.SyntaxNode;
+
+    private editor!: vscode.TextEditor;
+
+    private diags!: vscode.Diagnostic[]; 
+
     public addSymbol(symbol: TamarinSymbol) {
         this.symbols.push(symbol);
     };
@@ -505,5 +526,15 @@ export class TamarinSymbolTable{
         return this.symbols[int];
     };
 
+    public setRootNodeEditorDiags(root : Parser.SyntaxNode, editor : vscode.TextEditor, diags : vscode.Diagnostic[]): void{
+        this.root_node = root;
+        this.diags = diags;
+        this.editor = editor;
+    }
+
+    public update_table(){
+        let visitor : SymbolTableVisitor = new SymbolTableVisitor;
+        visitor.visit(this.root_node, this.editor, this.diags)
+    }
     
 };

@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import * as child_process from 'child_process';
 import path = require('path');
 import { runShortcut } from './features/run_shortcut';
 import { display_syntax_errors } from './features/syntax_errors';
@@ -22,7 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     console.log('Tamarin extension is now active');
 
-    //Fonctionnalités du plugin
+    //Plugin Features
      plugin_features(context);
      
      

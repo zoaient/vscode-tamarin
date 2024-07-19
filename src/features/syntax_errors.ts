@@ -9,7 +9,7 @@ let diagnostics = vscode.languages.createDiagnosticCollection('Tamarin');
 export let symbolTables = new Map<string, CreateSymbolTableResult>();
 
 
-//Permet d'obtenir l'indice du noeud actuel par rapport a son père
+//given an node returns his index in his father's children list 
 function get_child_index(node : Parser.SyntaxNode): number|null{
     if(node.parent === null ){
         return null;
@@ -38,7 +38,9 @@ export function getName(node : Parser.SyntaxNode| null, editor: vscode.TextEdito
 
 
 
-
+/* Function used to detect syntax errors sent by the parser with MISSING or ERROR nodes,
+I tried to personnalize error messages according to the different cases
+I did the most common ones*/
 export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.SyntaxNode|void> {
     let editor = editeur;
     await Parser.init();
@@ -94,7 +96,7 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
         }
     }
 
-    // Trouve les noeuds d'erreur ou de warning
+    // Find error or warning nodes
     function findMatches(node : Parser.SyntaxNode, editeur: vscode.TextEditor ) {
         if ((node.isMissing)) {
             let myId = get_child_index(node);
@@ -178,7 +180,7 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
 }
 
 
-//Fonction principale 
+//Main function
 export function display_syntax_errors(context: vscode.ExtensionContext): void {
     let first_time = 0;
     const changed_content = vscode.workspace.onDidChangeTextDocument((event) => {
@@ -192,13 +194,12 @@ export function display_syntax_errors(context: vscode.ExtensionContext): void {
                         throw new Error('Could not determine file name');
                     }  
                     symbolTables.set(fileName, table);
-                    //console.log(symbolTables)   // pour regarder le contenu de la table pour débugger
+                    //console.log(symbolTables)   // usefull for debugging symbol table 
                 }
             }
         });
     });
 
-    // Appeler les fonctions du plugin pour tous les éditeurs visibles
     if(first_time === 0){
     first_time ++
     vscode.window.visibleTextEditors.forEach(async (editor) => {
