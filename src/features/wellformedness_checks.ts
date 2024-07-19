@@ -584,7 +584,7 @@ function check_infix_operators(symbol_table : TamarinSymbolTable, editor : vscod
 
 const fixMap = new Map<vscode.Diagnostic, vscode.CodeAction>();
 
-// Register the code action provider
+// Register the code action provider usefull for the quick fixes 
 vscode.languages.registerCodeActionsProvider('tamarin', {
   provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext, token: vscode.CancellationToken) {
     const actions: vscode.CodeAction[] = [];
