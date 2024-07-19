@@ -274,7 +274,7 @@ class SymbolTableVisitor{
                         const builtinType = grandchild.child(0)?.grammarType ?? '';
                         this.registerident(grandchild, DeclarationType.Builtin, builtinType, root, get_range(grandchild, editor));
                         const built_in_index = ExistingBuiltIns.indexOf(builtinType);
-                        if(built_in_index > 0){
+                        if(built_in_index >= 0){
                             for (let k = 0 ; k < AssociatedFunctions[built_in_index].length; k += 2){
                                 if(AssociatedFunctions[built_in_index][k] === 'pk' && pkcount > 1){
                                     break;

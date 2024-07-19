@@ -536,43 +536,45 @@ function check_infix_operators(symbol_table : TamarinSymbolTable, editor : vscod
     for (let child of root.children){
         if(child.grammarType === '^' || child.grammarType === '*'){
             let current_builtins = return_builtins(symbol_table);
-            //pas très beau
             if(! get_builtins_name(current_builtins).includes('diffie-hellman')){
-                const diagnostic = build_error_display(child, editor, diags, "Error : symbols ^ or * cannot be used without diffie-hellman builtin")
-                diagnostic.code = "missingBuiltin";
-                const fix = new vscode.CodeAction("Include builtin : diffie-hellman", vscode.CodeActionKind.QuickFix);
-                if(current_builtins.length > 0){
-                const range = current_builtins[current_builtins.length - 1].name_range; 
-                fix.edit = new vscode.WorkspaceEdit();
-                fix.edit.insert(editor.document.uri, range.end, ", diffie-hellman" ); 
-                }
-                else {
-                    let theory = root ;
-                    while (theory.grammarType !== 'theory'){
-                        if(theory.parent)
-                        theory = theory.parent
-                    }
-                    theory = theory.child(3) as Parser.SyntaxNode
-                    const range = new vscode.Range(
-                        editor.document.positionAt(theory.startIndex),
-                        editor.document.positionAt(theory.endIndex)
-                    );
-                    fix.edit = new vscode.WorkspaceEdit();
-                    fix.edit.insert(editor.document.uri, range.end, "\nbuiltins :  diffie-hellman" );
-                }
-                fix.diagnostics = [diagnostic];
-                fix.isPreferred = true;
-                fixMap.set(diagnostic, fix);     
+                display_infix_error('diffie-hellman', '^ or *', child) 
                 }
         }
         else if (child.grammarType === '⊕'){
-            display_infix_error('xor','⊕', child);
+            display_infix_error('xor','⊕', child);;
         }
         else if (child.grammarType === '++'){
-            display_infix_error('multiset', '++', child);
+            display_infix_error('multiset', '++', child);;
         }
         else if (child.grammarType === '%+'){
-            display_infix_error('natural-numbers', '%+', child)
+            display_infix_error('natural-numbers', '%+', child);
+        }
+        else if (child.grammarType === DeclarationType.NARY){
+            if(getName(child.child(0),editor) === 'inv'){
+                display_infix_error('diffie-hellman', 'inv', child);
+            }
+            else if (getName(child.child(0),editor) === 'h'){
+                display_infix_error('hashing', 'h', child);
+            }
+            else if (getName(child.child(0), editor) === 'sdec' || getName(child.child(0), editor) === 'senc'){
+                display_infix_error('symmetric-encryption', 'sdec or senc' , child);
+            }
+            else if (getName(child.child(0), editor) === 'adec' || getName(child.child(0), editor) === 'aenc'){
+                display_infix_error('asymmetric-encryption', 'adec or aenc' , child);
+            }
+            else if (getName(child.child(0), editor) === 'sign' || getName(child.child(0), editor) === 'verify'){
+                display_infix_error('signing', 'sign or verify' , child);
+            }
+            else if (getName(child.child(0), editor) === 'revealSign' || getName(child.child(0), editor) === 'revealVerify' || getName(child.child(0), editor) === 'getMessage'){
+                display_infix_error('revealing-signing', 'revealSign or revealVerify or getMessage' , child);
+            }
+            else if (getName(child.child(0), editor) === 'pmult' || getName(child.child(0), editor) === 'em'){
+                display_infix_error('bilinear-pairing', 'pmult or em' , child);
+            }
+            else if (getName(child.child(0),editor) === 'XOR'){
+                display_infix_error('xor', 'XOR', child);
+            }
+            
         }
         else (check_infix_operators(symbol_table,editor,diags,child));
     }
