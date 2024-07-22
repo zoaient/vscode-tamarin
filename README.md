@@ -16,6 +16,10 @@ Features:
     - Checks the arity of facts and functions.
     - Checks whether a lemma uses free terms.
     - Checks whether all facts in the premises of the rules appear in the conclusion of some (other) rule (provides a quick fix by using the closest exisiting fact, based on editing distance).
+    - Checks wether all variables in the right hand side of a macro are in the left hand side or public.
+    - Checks wether all variable in the right hand side of an equation are in the left hand side.
+    - Provides a quick fix for function names (suggestions based on editing distance).
+    - Checks wether built-ins are imported when encountering corresponding functions or symbols (provides a quick fix to import the right built-in).
 
     This is a subset of the checks performed by Tamarin. For more details on Tamarin's wellformedness checks, see the corresponding [Tamarin Prover manual section](https://tamarin-prover.com/manual/master/book/010_modeling-issues.html).
 
