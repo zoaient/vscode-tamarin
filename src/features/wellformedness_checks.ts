@@ -509,13 +509,24 @@ function get_builtins_name(builtins : TamarinSymbol[]): string[]{
     return Sbuiltins;
 }
 
+function return_functions(symbol_table: TamarinSymbolTable): string[]{
+    let builtins : string[]  = [];
+        for (let symbol of symbol_table.getSymbols()){
+            if(symbol.declaration === DeclarationType.Functions && symbol.name){
+                builtins.push(symbol.name);
+            }
+        } 
+        return builtins;
+    }
+
 /* Function used to check if the use of * ^ or others symbol is allowed, if not provides a quick fix to include the right builtin,
 Also works with functions defined in builtins*/ 
 function check_infix_operators(symbol_table : TamarinSymbolTable, editor : vscode.TextEditor, diags : vscode.Diagnostic[], root : Parser.SyntaxNode){
 
     function display_infix_error(builtin: string, symbol: string, child: Parser.SyntaxNode): void {
         let current_builtins = return_builtins(symbol_table);
-        if (!get_builtins_name(current_builtins).includes(builtin)) {
+        let current_functions = return_functions(symbol_table)
+        if (!get_builtins_name(current_builtins).includes(builtin) && !current_functions.includes(getName(child.child(0), editor))) {
             const diagnostic = build_error_display(child, editor, diags, "Error : symbol " + symbol + " cannot be used without " + builtin + " builtin");
             diagnostic.code = "missingBuiltin";
             const fix = new vscode.CodeAction("Include builtin : " + builtin, vscode.CodeActionKind.QuickFix);
@@ -583,7 +594,7 @@ function check_infix_operators(symbol_table : TamarinSymbolTable, editor : vscod
                 display_infix_error('bilinear-pairing', 'pmult or em' , child);
             }
             else if (getName(child.child(0),editor) === 'XOR'){
-                display_infix_error('xor', 'XOR', child);
+                display_infix_error('xor', 'XOR', child);  
             }
             
         }

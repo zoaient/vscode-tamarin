@@ -145,13 +145,24 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
                 textDecoration: 'none; opacity: 0.5; background-color: none; border: none;',
             }
         });
+        //Part to detect if there is code after the end
         let hasContentAfterEnd = false;
         const text = editor.document.getText();
+        let inMultiLineComment = false;
         for (let lineNum = endPosition.line + 1; lineNum <= endOfDocumentPosition.line; lineNum++) {
             const line = text.split('\n')[lineNum];
-            if (line.trim() !== '') {
-                hasContentAfterEnd = true;
-                break;
+            // Check if the line is not empty and is not a comment
+            if (!inMultiLineComment) {
+                if (line.trim().startsWith('/*')) {
+                    inMultiLineComment = true;
+                } else if (line.trim() !== '' && !line.trim().startsWith('//')) {
+                    hasContentAfterEnd = true;
+                    break;
+                }
+            } else {
+                if (line.trim().endsWith('*/')) {
+                    inMultiLineComment = false;
+                }
             }
         }
         if (!hasContentAfterEnd) {

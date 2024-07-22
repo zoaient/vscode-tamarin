@@ -37,6 +37,12 @@ used to find lemma or rule vars for example  */
 function find_variables(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     let vars : Parser.SyntaxNode[] = []
     for( let child of node.children){
+
+         //This is used to skip errors in proof methods modify it if you want to manage proof methods
+         if(child.grammarType === "proof_method"){
+            continue;
+        }
+
         if(child.grammarType === 'pub_var' ||child.grammarType === 'fresh_var' || child.grammarType === DeclarationType.MVONF ||child.grammarType === 'nat_var'|| child.grammarType === 'temporal_var'){
             vars.push(child)
             vars = vars.concat(find_variables(child));
@@ -52,6 +58,12 @@ function find_variables(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
 function find_linear_fact(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     let vars : Parser.SyntaxNode[] = []
     for( let child of node.children){
+
+        //This is used to skip errors in proof methods modify it if you want to manage proof methods
+        if(child.grammarType === "proof_method"){
+            continue;
+        }
+        
         if(child.grammarType === DeclarationType.LinearF || child.grammarType === DeclarationType.NARY || child.grammarType === DeclarationType.PersistentF){
             vars.push(child)
             vars = vars.concat(find_linear_fact(child));
@@ -193,7 +205,7 @@ const AssociatedFunctions: string[][] =
 ['aenc', '2', 'adec', '2', 'pk', '1'],
 ['sign', '2', 'verify', '3', 'pk', '1'],
 ['revealSign', '2', 'revealVerify', '3', 'getMessage', '1', 'pk', '1'],
-['pmult', '1', 'em', '2'],
+['pmult', '2', 'em', '2'],
 [' XOR', '2', 'zero', '0'],
 ]
 
