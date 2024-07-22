@@ -3,32 +3,46 @@ import Parser = require("web-tree-sitter");
 import {getName} from '../features/syntax_errors'
 import { check_reserved_facts, checks_with_table } from '../features/wellformedness_checks';
 import { Diagnostic } from 'vscode';
+import { rootCertificates } from 'tls';
 
 export type CreateSymbolTableResult = {
     symbolTable: TamarinSymbolTable
 };
 
+/* Function used to register the symbol table for each file */ 
 let diagCollection = vscode.languages.createDiagnosticCollection('Tamarin');
 export const createSymbolTable = (root : Parser.SyntaxNode, editor :vscode.TextEditor): CreateSymbolTableResult => {
     let diags: Diagnostic[] = []; 
     const symbolTableVisitor = new SymbolTableVisitor();
     let symbolTable = symbolTableVisitor.visit(root, editor, diags);
+    symbolTable.setRootNodeEditorDiags(root, editor, diags);
     convert_linear_facts(symbolTable);
-    checks_with_table(symbolTable, editor, diags)
+    checks_with_table(symbolTable, editor, diags, root)
     diagCollection.set(editor.document.uri, diags)
     return {symbolTable};
 };
 
+/* Given the tree structure persistent facts are just linear facts with a ! as left sibling 
+function used to set the right type */
 function convert_linear_facts(ts : TamarinSymbolTable){
     for (let symbol of ts.getSymbols()){
         if(symbol.declaration === DeclarationType.LinearF && symbol.node.previousSibling?.grammarType === "!"){
             symbol.declaration = DeclarationType.PersistentF;
+            
         }
     }
 }
+/* Function used to find all variables given a  tree node it will search through all sons,
+used to find lemma or rule vars for example  */ 
 function find_variables(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     let vars : Parser.SyntaxNode[] = []
     for( let child of node.children){
+
+         //This is used to skip errors in proof methods modify it if you want to manage proof methods
+         if(child.grammarType === "proof_method"){
+            continue;
+        }
+
         if(child.grammarType === 'pub_var' ||child.grammarType === 'fresh_var' || child.grammarType === DeclarationType.MVONF ||child.grammarType === 'nat_var'|| child.grammarType === 'temporal_var'){
             vars.push(child)
             vars = vars.concat(find_variables(child));
@@ -40,9 +54,16 @@ function find_variables(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     return vars;  
 }
 
+/* Same as the above function but for facts or functions*/
 function find_linear_fact(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     let vars : Parser.SyntaxNode[] = []
     for( let child of node.children){
+
+        //This is used to skip errors in proof methods modify it if you want to manage proof methods
+        if(child.grammarType === "proof_method"){
+            continue;
+        }
+        
         if(child.grammarType === DeclarationType.LinearF || child.grammarType === DeclarationType.NARY || child.grammarType === DeclarationType.PersistentF){
             vars.push(child)
             vars = vars.concat(find_linear_fact(child));
@@ -67,6 +88,8 @@ function find_narry(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     }  
     return vars;  
 }
+
+/* Given a function or fact node returns his arity*/
 export function get_arity(node : Parser.SyntaxNode[]|undefined): number{
     let arity: number = 0;
     if(node)
@@ -78,6 +101,7 @@ export function get_arity(node : Parser.SyntaxNode[]|undefined): number{
     return arity;
 }
 
+/* Same as above but for macros */
 export function get_macro_arity(node : Parser.SyntaxNode[]|undefined): number{
     let arity: number = -1;
     if(node)
@@ -98,7 +122,7 @@ export function get_range(node : Parser.SyntaxNode|null, editor : vscode.TextEdi
     const range = new vscode.Range(startPos, endPos);
     return range
     }
-    //inutile normalement 
+    //usually useless  
     return new vscode.Range(editor.document.positionAt(0), editor.document.positionAt(0))
 }
 
@@ -109,12 +133,16 @@ export enum DeclarationType{
     PRVariable = 'premise_variable',
     ActionFVariable = 'action_fact_variable',
     LemmaVariable = 'lemma_variable',
-    MacroVariable = 'macro_variable',
+    LMacroVariable = 'left_macro_variable',
+    RMacroVariable = 'right_macro_variable',
+    LEquationVariable  = 'left_equation_variable',
+    REquationVariable  = 'right_equation_variable',
     RestrictionVariable = 'restriction_variable',
 
     Builtins = 'built_ins',
     Functions = 'functions',
     Macros = 'macros',
+    Equations = 'equations',
     QF = 'quantified_formula',
     NF = 'nested_formula',
     Let  = 'let',
@@ -138,7 +166,9 @@ export enum DeclarationType{
     NARY = 'nary_app',
     DEFAULT = 'default',
     Macro = 'macro',
+    Equation = 'equation'
 };
+
 function convert(grammar_type : string) : DeclarationType{
     if(grammar_type === 'nary_app'){return DeclarationType.NARY}
     else if(grammar_type === 'linear_fact'){return DeclarationType.LinearF}
@@ -152,7 +182,7 @@ export enum variable_types{
     TEMP = '#'
 }
 
-export const ReservedFacts: string[] = ['Fr','In','Out','KD','KU','K'] ;
+export const ReservedFacts: string[] = ['Fr','In','Out','KD','KU','K','diff'] ;
 
 const ExistingBuiltIns : string[] = 
 [
@@ -175,7 +205,7 @@ const AssociatedFunctions: string[][] =
 ['aenc', '2', 'adec', '2', 'pk', '1'],
 ['sign', '2', 'verify', '3', 'pk', '1'],
 ['revealSign', '2', 'revealVerify', '3', 'getMessage', '1', 'pk', '1'],
-['pmult', '1', 'em', '2'],
+['pmult', '2', 'em', '2'],
 [' XOR', '2', 'zero', '0'],
 ]
 
@@ -192,7 +222,7 @@ class SymbolTableVisitor{
         return this.symbolTable;
     };
 
-    
+    /* Method that builds the symbol table adding every symbols while visiting the AST*/
     public visit(root : Parser.SyntaxNode, editor : vscode.TextEditor, diags: vscode.Diagnostic[]): TamarinSymbolTable{
         for (let i = 0; i < root.children.length; i++){
             const child = root.child(i);
@@ -223,13 +253,43 @@ class SymbolTableVisitor{
                     }
                 }
             }
-            else if( child?.grammarType === DeclarationType.Macros){
+            else if( child?.grammarType === DeclarationType.Macros || child?.grammarType === DeclarationType.Equations){
                 for(let grandchild of child.children){
                     if(grandchild.grammarType === DeclarationType.Macro){
                         this.registerfucntion(grandchild, DeclarationType.Macro, getName(grandchild.child(0),editor),get_macro_arity(grandchild.children),root, get_range(grandchild.child(0),editor))
-                        this.register_vars_rule(grandchild, DeclarationType.MacroVariable, editor, grandchild)
-                        this.register_facts_searched(grandchild,editor, root,DeclarationType.NARY )
+                        this.register_facts_searched(grandchild,editor, grandchild,DeclarationType.NARY )
+                        let eqcount = 0  ;                
+                        for(let ggchild of grandchild.children){
+                            if(ggchild.grammarType === "="){
+                                eqcount ++ ;
+                            }
+                            if(eqcount === 0){
+                                this.register_vars_left_macro_part(ggchild, DeclarationType.LMacroVariable, editor, grandchild);
+                            }
+                            else{
+                                this.register_vars_rule(ggchild, DeclarationType.RMacroVariable, editor, grandchild);
+
+                            }
+                        }
                     }
+                    else if (grandchild.grammarType === DeclarationType.Equation){ 
+                        check_reserved_facts(grandchild, editor, diags)
+                        this.register_facts_searched(grandchild, editor, grandchild, DeclarationType.NARY);   
+                        let eqcount = 0  ;                
+                        for(let ggchild of grandchild.children){
+                            if(ggchild.grammarType === "="){
+                                eqcount ++ ;
+                            }
+                            if(eqcount === 0){
+                                this.register_vars_rule(ggchild, DeclarationType.LEquationVariable, editor, grandchild);
+                            }
+                            else{
+                                this.register_vars_rule(ggchild, DeclarationType.REquationVariable, editor, grandchild);
+
+                            }
+                        }
+                    }
+
                 }
             }
             else if (child?.grammarType === DeclarationType.Builtins){
@@ -237,10 +297,9 @@ class SymbolTableVisitor{
                 for (let grandchild of child.children){
                     if(grandchild.grammarType === DeclarationType.Builtin && grandchild.child(0) !== null){
                         const builtinType = grandchild.child(0)?.grammarType ?? '';
-                        if(builtinType === 'asymmetric-encryption'||'signing'||'revealing-signing'){ pkcount ++ }
                         this.registerident(grandchild, DeclarationType.Builtin, builtinType, root, get_range(grandchild, editor));
                         const built_in_index = ExistingBuiltIns.indexOf(builtinType);
-                        if(built_in_index > 0){
+                        if(built_in_index >= 0){
                             for (let k = 0 ; k < AssociatedFunctions[built_in_index].length; k += 2){
                                 if(AssociatedFunctions[built_in_index][k] === 'pk' && pkcount > 1){
                                     break;
@@ -248,6 +307,7 @@ class SymbolTableVisitor{
                                 this.registerfucntion(grandchild, DeclarationType.Functions, AssociatedFunctions[built_in_index][k], parseInt(AssociatedFunctions[built_in_index][k+1]), root, get_range(grandchild, editor));
                             }
                         }
+                        if(builtinType === 'asymmetric-encryption'||'signing'||'revealing-signing'){ pkcount ++ }
                     }
                     
                 }
@@ -289,12 +349,45 @@ class SymbolTableVisitor{
         let vars: Parser.SyntaxNode[] = find_variables(node);
                 for(let k = 0; k < vars.length; k++){
                     if(vars[k].grammarType === DeclarationType.MVONF){
-                        this.registerident(vars[k], type, getName(vars[k].child(0), editor),root, get_range(vars[k].child(0), editor))
+                        let isregistered = false
+                        for(let symbol of this.symbolTable.getSymbols()){
+                            if(symbol.declaration === DeclarationType.Functions){
+                                if(symbol.name === getName(vars[k], editor)){
+                                    isregistered = true;
+                                    this.registerfucntion(vars[k], DeclarationType.NARY, symbol.name,0,root, get_range(vars[k],editor) )
+                                }
+                            }
+                            else {continue;}
+                        }
+                        if(! isregistered){
+                            this.registerident(vars[k], type, getName(vars[k].child(0), editor),root, get_range(vars[k].child(0), editor))
+                        }
                     }
                     else{
                         this.registerident(vars[k], type, getName(vars[k].child(1), editor),root, get_range(vars[k].child(1), editor), vars[k].child(0)?.grammarType)
                     }
                 }
+    }
+
+    private register_vars_left_macro_part(node :Parser.SyntaxNode, type : DeclarationType, editor : vscode.TextEditor, root : Parser.SyntaxNode){
+        if(node.grammarType === DeclarationType.MVONF){
+            let isregistered = false
+                        for(let symbol of this.symbolTable.getSymbols()){
+                            if(symbol.declaration === DeclarationType.Functions){
+                                if(symbol.name === getName(node, editor)){
+                                    isregistered = true;
+                                    this.registerfucntion(node, DeclarationType.NARY, symbol.name,0,root, get_range(node,editor) )
+                                }
+                            }
+                            else {continue;}
+                        }
+                        if(! isregistered){
+                            this.registerident(node, type, getName(node.child(0), editor),root, get_range(node.child(0), editor))
+                        }
+        }
+        else if (node.grammarType === 'pub_var' ||node.grammarType === 'fresh_var' || node.grammarType === 'nat_var'|| node.grammarType === 'temporal_var'){
+            this.registerident(node, type, getName(node.child(1), editor),root, get_range(node.child(1), editor), node.child(0)?.grammarType)
+        }
     }
 
     private register_vars_lemma(node :Parser.SyntaxNode, type : DeclarationType, editor : vscode.TextEditor){
@@ -308,7 +401,19 @@ class SymbolTableVisitor{
             }
             if(vars[k].parent !== null){
                 if(vars[k].grammarType === DeclarationType.MVONF ||  (vars[k].grammarType === DeclarationType.TMPV  && vars[k].children.length === 1)){
-                    this.registerident(vars[k], type, getName(vars[k].child(0), editor),context, get_range(vars[k].child(0), editor))
+                    let isregistered = false
+                    for(let symbol of this.symbolTable.getSymbols()){
+                        if(symbol.declaration === DeclarationType.Functions){
+                            if(symbol.name === getName(vars[k], editor)){
+                                isregistered = true;
+                                this.registerfucntion(vars[k], DeclarationType.NARY, symbol.name,0,context, get_range(vars[k],editor) )
+                            }
+                        }
+                        else {continue;}
+                    }
+                    if(! isregistered){
+                        this.registerident(vars[k], type, getName(vars[k].child(0), editor),context, get_range(vars[k].child(0), editor))
+                    }
                 }
                 else{
                     this.registerident(vars[k], type, getName(vars[k].child(1), editor),context,get_range(vars[k].child(1), editor) ,  vars[k].child(0)?.grammarType)
@@ -317,6 +422,7 @@ class SymbolTableVisitor{
         }
     }
 
+    /* Function unsed to register the facts found with find_linear_fact*/
     private register_facts_searched(node :Parser.SyntaxNode, editor : vscode.TextEditor, root : Parser.SyntaxNode, type ?: DeclarationType){
         let vars: Parser.SyntaxNode[] = find_linear_fact(node);
         for(let k = 0; k < vars.length; k++){
@@ -338,6 +444,7 @@ class SymbolTableVisitor{
         }
     }
 
+    /* Same as above but for functions */
     private register_narry(node :Parser.SyntaxNode, editor : vscode.TextEditor, root : Parser.SyntaxNode){
         let vars: Parser.SyntaxNode[] = find_narry(node);
         for(let k = 0; k < vars.length; k++){
@@ -351,11 +458,15 @@ class SymbolTableVisitor{
                     this.registerfucntion(vars[k], convert(vars[k].grammarType) , getName(vars[k].child(0),editor),arity, root, get_range(vars[k].child(0),editor))
                 }
             }
+            else{
+                this.registerfucntion(vars[k], convert(vars[k].grammarType) , getName(vars[k].child(0),editor),0, root, get_range(vars[k].child(0),editor))
+
+            }
         }
     }
 
 
-
+    /* Same as above but for identifiers */
     private registerident(ident : Parser.SyntaxNode|null|undefined, declaration: DeclarationType, name : string|undefined,  context : Parser.SyntaxNode, range : vscode.Range, type ?: string ){
         if(!ident){
             return;
@@ -409,6 +520,12 @@ export function set_associated_qf(symbol : TamarinSymbol, node : Parser.SyntaxNo
 export class TamarinSymbolTable{
     private symbols : TamarinSymbol[] = [];
 
+    private root_node!: Parser.SyntaxNode;
+
+    private editor!: vscode.TextEditor;
+
+    private diags!: vscode.Diagnostic[]; 
+
     public addSymbol(symbol: TamarinSymbol) {
         this.symbols.push(symbol);
     };
@@ -421,5 +538,15 @@ export class TamarinSymbolTable{
         return this.symbols[int];
     };
 
+    public setRootNodeEditorDiags(root : Parser.SyntaxNode, editor : vscode.TextEditor, diags : vscode.Diagnostic[]): void{
+        this.root_node = root;
+        this.diags = diags;
+        this.editor = editor;
+    }
+
+    public update_table(){
+        let visitor : SymbolTableVisitor = new SymbolTableVisitor;
+        visitor.visit(this.root_node, this.editor, this.diags)
+    }
     
 };

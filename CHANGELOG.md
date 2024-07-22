@@ -1,5 +1,19 @@
 # Change Log
 
+## V1.1.0
+New welformedness checks and fixes.
+
+### New checks 
+ - Checks wether all variables in the right part of a macro are in the left part or public.
+- Checks wether all variable in the right part of an equation are in the left part.
+- Provides a quick fix for function names again with editing distance.
+- Checks wether built-ins are imported to use corresponding functions or symbols (provides a quick fix to import the right built-in).
+
+### Fixes 
+- Editing distance is now used to display all close tokens (distance < 3) and not the first one only.
+- `diff` is considered as a reserved function symbol so that there is no error while using it. 
+- Functions with arity 0 may be used without parenthesis.
+
 ## V1.0.1
 Fix package.json
 

@@ -1,6 +1,16 @@
- Using tree-sitter in the Tamarin plugin
+# Using tree-sitter in the Tamarin plugin
 
-### Importing the grammar 
+### Installing dependencies
+
+To install the required dependencies, one can use brew:
+
+```brew install tree-sitter docker podman```
+
+Then you need to initialize and start podman as follows:
+
+`podman machine init` and `podman machine start`
+
+### Importing the grammar
 All the files required to use the grammar in the plugin are located in src/grammar/tree-sitter-tamarin.
 
 To use tree-sitter with a new grammar, use the ```tree-sitter generate``` command.
@@ -8,9 +18,9 @@ To use tree-sitter with a new grammar, use the ```tree-sitter generate``` comman
  ⚠️ this command creates all the files needed to use the grammar with Typescript, for example grammar.js, as well as json and C files. In particular, the parser is created.
 
 ### Importing the parser
-Then, to use the parser inside the vscode plugin, use: 
+Then, to use the parser inside the vscode plugin, use:
 \
-```tree-sitter build --wasm --output location_of_the_output```
+```tree-sitter build --wasm --output src/grammar/parser-tamarin.wasm```
 \
 To perform this command you need to have docker running or install the other applications suggested on tree sitter website:
 \
@@ -18,8 +28,8 @@ To perform this command you need to have docker running or install the other app
 \
 This command creates a dynamic .wasm library which enables you to use the parser inside the vscode plugin.
 
-### Using the parser  
-There are many ways to create an instance of the parser using a new grammar. Here we use the following approach: 
+### Using the parser
+There are many ways to create an instance of the parser using a new grammar. Here we use the following approach:
 \
 ```Typescript 
 import Parser =require( "web-tree-sitter");
