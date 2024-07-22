@@ -169,6 +169,9 @@ function check_variables_type_is_consistent_inside_a_rule(symbol_table : Tamarin
         }
         else if (current_symbol.declaration === DeclarationType.RMacroVariable){
             let isbreak = false;
+            if(current_symbol.type === '$'){
+                continue;
+            }
             for (let symbol of symbol_table.getSymbols()){
                 if(symbol.declaration === DeclarationType.LMacroVariable && symbol.name === current_symbol.name && symbol.context === current_symbol.context){
                     isbreak = true;
