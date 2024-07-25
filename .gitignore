@@ -15,5 +15,6 @@ out/
 run.sh
 
 .gitignore
+.DS_Store
 
 *.antlr
