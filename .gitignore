@@ -5,16 +5,14 @@
 # Extra
 node_modules
 # Extension
-*.vsix
 out/
+build/
 
 # IDE
-.vscode/
 .vscode-test/
 
 run.sh
 
-.gitignore
 .DS_Store
 
 *.antlr
