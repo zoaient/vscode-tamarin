@@ -1,6 +1,6 @@
 # Tamarin Visual Studio Code extension
 
-A Visual Studio Code extension for Tamarin files (.spthy) based on [giclu-3's extension](https://github.com/gilcu3/vscode-tamarin) and using [Tamarin's tree-sitter grammar](https://github.com/tamarin-prover/tamarin-prover/pull/648).
+The official Visual Studio Code extension for Tamarin files (.spthy) supported by the Tamarin team. Based on [giclu-3's extension](https://github.com/gilcu3/vscode-tamarin) and using [Tamarin's tree-sitter grammar](https://github.com/tamarin-prover/tamarin-prover/pull/648).
 
 ![Example](./images/error.png)
 
