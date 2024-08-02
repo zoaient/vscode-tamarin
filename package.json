@@ -151,8 +151,8 @@
     "@types/glob": "^7.1.1",
     "@types/mocha": "^9.1.0",
     "@types/node": "^13.13.52",
-    "prebuildify": "^6.0.0",
     "@types/vscode": "^1.90.0",
+    "prebuildify": "^6.0.0",
     "typescript": "^5.4.5",
     "vscode-test": "^1.3.0"
   },
