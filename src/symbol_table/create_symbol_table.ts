@@ -369,7 +369,7 @@ class SymbolTableVisitor{
             else if( child?.grammarType === DeclarationType.Rule_let_block){
                 this.register_vars_rule(child, DeclarationType.PRVariable, editor, root)
             }
-            else if (child?.grammarType === 'include'){
+            /*else if (child?.grammarType === 'include'){
                 const fileName = getName(child.child(2), editor);
                 const currentFileDir = path.dirname(editor.document.uri.fsPath);
                 const filePath = path.join(currentFileDir, fileName);
@@ -402,7 +402,7 @@ class SymbolTableVisitor{
                         throw new Error('Method not implemented.');
                     }
                 };
-        
+                
                 if (includedEditor) {
                     const includedFileContent = await vscode.workspace.fs.readFile(includedFileUri);
                     const includedFileText = includedFileContent.toString();
@@ -410,7 +410,7 @@ class SymbolTableVisitor{
                     const tree_root = await parseText(includedFileText);
                     await this.visit(tree_root, includedEditor, diags);
                 }
-            }
+            }*/
             else{
                 if(child !== null){
                     await this.visit(child, editor, diags);
