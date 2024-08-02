@@ -1,6 +1,6 @@
 # Change Log
 
-## V1.1.3
+## V1.1.4
 Small fixes about "fst", "snd", and "pair" functions.
 New logo.
 Comments in the code.
