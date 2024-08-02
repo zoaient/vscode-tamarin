@@ -148,7 +148,6 @@
     "prebuildify": "prebuildify --napi --strip"
   },
   "devDependencies": {
-    "@types/glob": "^7.1.1",
     "@types/mocha": "^9.1.0",
     "@types/node": "^13.13.52",
     "@types/vscode": "^1.90.0",
