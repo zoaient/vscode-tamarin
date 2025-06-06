@@ -19,6 +19,8 @@ To use tree-sitter with a new grammar, use the ```tree-sitter generate``` comman
 
 ### Importing the parser
 Then, to use the parser inside the vscode plugin, use:
+
+TODO : Remplacer ici avec la version correcte de l'ajout du parser dans le plugin vscode (voir notes du 6 Juin)
 \
 ```tree-sitter build --wasm --output src/grammar/parser-tamarin.wasm```
 \
