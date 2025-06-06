@@ -111,7 +111,7 @@
         "when": "resourceLangId == tamarin"
       },
       {
-        "key": "ctrl+tab",
+        "key": "ctrl+alt+n",
         "command": "extension.tabKeyBinding",
         "when": "editorTextFocus"
       }
