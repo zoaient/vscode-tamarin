@@ -1,6 +1,7 @@
 {
   "fileTypes": [
-    ".spthy"
+    ".spthy",
+    ".splib"
   ],
   "name": "tamarin",
   "patterns": [
@@ -60,20 +61,19 @@
       }
     },
     {
-      "match": "(rule|restriction)[\\s]+(\\w+)\\s*:",
+      "match": "(rule|restriction)[\\s]+(\\w+)(\\s*\\[(role)(=)(\"([^\"]*)\")\\])?\\s*:",
       "captures": {
-        "1": {
-          "name": "keyword.control"
-        },
-        "2": {
-          "name": "entity.name.function"
-        }
+        "1": { "name": "keyword.control.tamarin" },
+        "2": { "name": "entity.name.function.tamarin" },
+        "4": { "name": "variable.parameter.tamarin" },
+        "5": { "name": "keyword.operator.assignment.tamarin" },
+        "6": { "name": "string.quoted.double.tamarin" }
       }
     },
     {
       "match": "(lemma)\\s+(\\w+)\\s*(\\[(?:(?:sources|use_induction|reuse)|(?:(?:hide_lemma)=\\w+))(?:,(?:(?:sources|use_induction|reuse)|(?:(?:hide_lemma)=\\w+)))*\\])?\\s*:",
-      "captures": {
-        "1": {
+          "captures": {
+            "1": {
           "name": "keyword.control"
         },
         "2": {

@@ -6,8 +6,6 @@ import { RenameCommand } from './features/rename';
 import { go_to_definition_command } from './features/go_to';
 
 function plugin_features(context : vscode.ExtensionContext){
-   const documentSelector = [{ scheme: 'file', language: 'tamarin' }]
-
    runShortcut(context);
    display_syntax_errors(context)
    RenameCommand(context)
