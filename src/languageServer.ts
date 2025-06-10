@@ -8,10 +8,12 @@ import {
 	ServerOptions,
 	TransportKind
 } from 'vscode-languageclient/node';
+import * as vscode from 'vscode';
 
 let client: LanguageClient;
 
 export const startLanguageServer = async (context: ExtensionContext) => {
+	const documentSelector = [{ scheme: 'file', language: 'tamarin' }]
 	const serverModule = context.asAbsolutePath(
 		path.join('server', 'out', 'server.js')
 	);
@@ -22,7 +24,10 @@ export const startLanguageServer = async (context: ExtensionContext) => {
 	};
 
 	const clientOptions: LanguageClientOptions = {
-		documentSelector: [{ scheme: 'file', language: 'spthy' }],
+		documentSelector: documentSelector,
+		synchronize: {
+			fileEvents: vscode.workspace.createFileSystemWatcher('**/*.spthy')
+		}
 	};
 
 	client = new LanguageClient(

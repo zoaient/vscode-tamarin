@@ -206,7 +206,11 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
 export function display_syntax_errors(context: vscode.ExtensionContext): void {
 
     const changed_content = vscode.workspace.onDidChangeTextDocument((event) => {
+    
         vscode.window.visibleTextEditors.forEach(async (editor) => {
+            if (editor.document.languageId !== 'tamarin') {
+               return;
+            }
             if (editor.document === event.document) {
                 const tree = await detect_errors(editor);
                 if (tree) {

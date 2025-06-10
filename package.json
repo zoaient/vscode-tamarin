@@ -24,7 +24,8 @@
           "tamarin"
         ],
         "extensions": [
-          ".spthy"
+          ".spthy",
+          ".splib"
         ],
         "configuration": "./language-configuration.json"
       }
@@ -45,27 +46,33 @@
     "commands": [
       {
         "command": "tamarin.checkSyntax",
-        "title": "Tamarin Check Syntax"
+        "title": "Tamarin Check Syntax",
+        "when": "editorLangId == tamarin"
       },
       {
         "command": "tamarin.checkSemantics",
-        "title": "Tamarin Check Semantics"
+        "title": "Tamarin Check Semantics",
+        "when": "editorLangId == tamarin"
       },
       {
         "command": "tamarin.runServer",
-        "title": "Tamarin Run Code in Server"
+        "title": "Tamarin Run Code in Server",
+        "when": "editorLangId == tamarin"
       },
       {
         "command": "tamarin.runConsoleProofCommand",
-        "title": "Tamarin Run Code in Console"
+        "title": "Tamarin Run Code in Console",
+        "when": "editorLangId == tamarin"
       },
       {
         "command": "tamarin.play",
-        "title": "Run Tamarin"
+        "title": "Run Tamarin",
+        "when": "editorLangId == tamarin"
       },
       {
         "command": "tamarin.play2",
-        "title": "Run Tamarin with auto-sources option"
+        "title": "Run Tamarin with auto-sources option",
+        "when": "editorLangId == tamarin"
       },
       {
         "command": "tamarin.renameCodeAction",
@@ -74,19 +81,23 @@
       },
       {
         "command": "Rename",
-        "title": "Rename"
+        "title": "Rename",
+        "when": "editorLangId == tamarin"
       },
       {
         "command": "Search definition",
-        "title": "Search definition"
+        "title": "Search definition",
+        "when": "editorLangId == tamarin"
       },
       {
         "command": "extension.tabKeyBinding",
-        "title": "Navigate to next symbol"
+        "title": "Navigate to next symbol",
+        "when": "editorLangId == tamarin"
       },
       {
         "command": "myExtension.navigateToNextSymbol",
-        "title": "Navigate to Next Symbol"
+        "title": "Navigate to Next Symbol",
+        "when": "editorLangId == tamarin"
       }
     ],
     "keybindings": [
