@@ -325,128 +325,6 @@ function check_action_fact(symbol_table : TamarinSymbolTable, editor: vscode.Tex
     }
 }
 
-
-
-// Version améliorée de buildAnalysisContext
-
-function buildAnalysisContext(symbol_table : TamarinSymbolTable) {
-    const allSymbols=symbol_table.getSymbols();
-    // ... les autres maps restent les mêmes
-    const nameToSymbols = new Map<string, any[]>();
-    const definedFunctions = new Map<string, any>(); 
-    const functionCalls = [];
-    
-    // NOUVELLE STRUCTURE : plus précise pour les arités
-    const functionArities = new Map<string, { definitions: Set<number>, calls: Set<number> }>();
-
-    for (const symbol of allSymbols) {
-        if (!symbol.name) continue;
-
-        // Initialisation des structures
-        if (!nameToSymbols.has(symbol.name)) {
-            nameToSymbols.set(symbol.name, []);
-        }
-        if (!functionArities.has(symbol.name)) {
-            functionArities.set(symbol.name, { definitions: new Set(), calls: new Set() });
-        }
-        nameToSymbols.get(symbol.name)!.push(symbol);
-
-        // On classe et on enregistre l'arité au bon endroit
-        if (symbol.declaration === DeclarationType.NARY) { // On suppose que NARY = appel de fonction
-            functionCalls.push(symbol);
-            if (symbol.arity !== undefined) {
-                functionArities.get(symbol.name)!.calls.add(symbol.arity);
-            }
-        } else { // On suppose que tout le reste est une forme de définition/déclaration
-            definedFunctions.set(symbol.name, symbol);
-            if (symbol.arity !== undefined) {
-                // IMPORTANT: C'est ici qu'on gère le cas de Fr(sign)
-                // Si l'arité est 0 et que c'est une utilisation (pas une vraie définition), on peut l'ignorer pour le check d'arité.
-                // Pour l'instant, on l'ajoute. La logique de check sera plus intelligente.
-                functionArities.get(symbol.name)!.definitions.add(symbol.arity);
-            }
-        }
-    }
-
-    return { definedFunctions, functionCalls, functionArities, nameToSymbols };
-}
-
-
-// Version améliorée de checkArityProblems
-
-function checkArityProblems(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]) {
-    const context=buildAnalysisContext(symbol_table);
-    for (const [name, arities] of context.functionArities.entries()) {
-        const { definitions, calls } = arities;
-
-        // CAS 1 : Plusieurs arités différentes DANS LES DÉFINITIONS.
-        // C'est une erreur claire : ex: définir f(x) et f(x, y).
-        if (definitions.size > 1) {
-            const problematicSymbols = context.nameToSymbols.get(name) || [];
-            for (const symbol of problematicSymbols) {
-                build_error_display(symbol.node, editor, diags, `Error: Incoherent arities for definition of '${name}'. Found: [${[...definitions].join(', ')}]`);
-            }
-            // Si on a déjà signalé cette erreur, on passe à la suivante pour ne pas surcharger.
-            continue;
-        }
-
-        // Si il n'y a pas de définition (ex: fonction inconnue), on ne peut pas vérifier l'arité.
-        // Ce sera géré par checkUnknownFunctions.
-        if (definitions.size === 0) {
-            continue;
-        }
-
-        const definedArity = definitions.values().next().value; // On sait qu'il n'y en a qu'une.
-
-        // CAS 2 : Un ou plusieurs appels n'ont pas la bonne arité.
-        for (const callArity of calls) {
-            if (callArity !== definedArity) {
-                const problematicSymbols = (context.nameToSymbols.get(name) || [])
-                    .filter(s => s.declaration === DeclarationType.NARY && s.arity === callArity);
-
-                for (const symbol of problematicSymbols) {
-                    build_error_display(symbol.node, editor, diags, `Error: Wrong number of arguments for '${name}'. Expected ${definedArity}, but got ${callArity}.`);
-                }
-            }
-        }
-    }
-}
-/*
-function checkUnknownFunctions(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]) {
-    const context = buildAnalysisContext(symbol_table);
-    const definedNames = Array.from(context.definedFunctions.keys());
-
-    for (const callSymbol of context.functionCalls) {
-        if (!context.definedFunctions.has(callSymbol.name)) {
-            build_error_display(callSymbol.node, editor, diags, `Error: unknown function or macro '${callSymbol.name ?? ''}'`);
-
-            // Logique Levenshtein pour suggérer des corrections
-            let bestMatch = null;
-            let minDistance = 3; // Seuil
-
-            for (const definedName of definedNames) {
-                const distance = levenshteinDistance(callSymbol.name, definedName);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    bestMatch = definedName;
-                }
-            }
-
-            if (bestMatch) {
-                const diagnostic = build_warning_display(callSymbol.node, editor, diags, `Warning: Did you mean '${bestMatch}'?`);
-                diagnostic.code = "wrongFunctionName";
-
-                const fix = new vscode.CodeAction(`Replace with '${bestMatch}'`, vscode.CodeActionKind.QuickFix);
-                fix.edit = new vscode.WorkspaceEdit();
-                fix.edit.replace(editor.document.uri, callSymbol.name_range, bestMatch);
-                fix.diagnostics = [diagnostic];
-                fix.isPreferred = true;
-                fixMap.set(diagnostic, fix);
-            }
-        }
-    }
-}
-*/
 /* Function to check macros, functions, facts arity and to provide
  quick fixes for wrong function name still using leverstein distance */
 
@@ -466,7 +344,6 @@ function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable
 
     for( let i = 0; i < symbol_table.getSymbols().length; i++){
         let current_symbol = symbol_table.getSymbol(i);
-        console.log(current_symbol);
         if(symbol_table.getSymbol(i).declaration === DeclarationType.LinearF || symbol_table.getSymbol(i).declaration === DeclarationType.PersistentF || symbol_table.getSymbol(i).declaration === DeclarationType.Functions || symbol_table.getSymbol(i).declaration === DeclarationType.NARY || symbol_table.getSymbol(i).declaration === DeclarationType.Macro){
             if(current_symbol.name){
                 if(getNames(known_functions).includes(current_symbol.name)){
@@ -477,8 +354,6 @@ function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable
                             }
                             else{
                                 if(current_symbol.declaration === DeclarationType.NARY){
-                                    console.log(current_symbol.arity);
-                                    console.log("known_functions", known_functions);
                                     build_error_display(current_symbol.node, editor, diags, "Error : incorrect arity for this function, "+ known_functions[k].arity + " arguments required")                                  
                                 }
                                 else if( current_symbol.declaration === DeclarationType.LinearF || current_symbol.declaration === DeclarationType.PersistentF){
