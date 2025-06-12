@@ -282,6 +282,11 @@ class SymbolTableVisitor{
                     if(grandchild.grammarType === DeclarationType.FUNCP || grandchild.grammarType === DeclarationType.FUNCPR || grandchild.grammarType === DeclarationType.FUNCD || grandchild.grammarType === DeclarationType.FUNCUST){
                         this.registerfucntion(grandchild, DeclarationType.Functions, getName(grandchild.child(0),editor), parseInt(getName(grandchild.child(2),editor)), root, get_range(grandchild.child(0),editor));
                     }
+                    else if(grandchild.grammarType === 'function_untyped') {
+                        const funcName = getName(grandchild.child(0), editor);
+                        const arity = parseInt(getName(grandchild.child(2), editor));
+                        this.registerfucntion(grandchild, DeclarationType.Functions, funcName, arity, root, get_range(grandchild.child(0), editor));
+                    }
                 }
             }
             else if( child?.grammarType === DeclarationType.Macros || child?.grammarType === DeclarationType.Equations){
