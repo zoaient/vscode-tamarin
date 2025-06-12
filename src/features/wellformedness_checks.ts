@@ -331,7 +331,6 @@ function check_action_fact(symbol_table : TamarinSymbolTable, editor: vscode.Tex
 function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     let known_functions : TamarinSymbol[] = [];
     let errors : string[] = []
-
     function getNames(list : TamarinSymbol[]): string[]{
         let str_list : string[] = [];
         for(let symbol of list){

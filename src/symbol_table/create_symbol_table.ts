@@ -504,23 +504,44 @@ class SymbolTableVisitor{
         }
     }
 
-    /* Function unsed to register the facts found with find_linear_fact*/
+    /* Function used to register the facts found with find_linear_fact*/
     private register_facts_searched(node :Parser.SyntaxNode, editor : vscode.TextEditor, root : Parser.SyntaxNode, type ?: DeclarationType){
         let vars: Parser.SyntaxNode[] = find_linear_fact(node);
         for(let k = 0; k < vars.length; k++){
-            if(ReservedFacts.includes(getName(vars[k].child(0),editor))){
+            const factName = getName(vars[k].child(0), editor);
+            if(ReservedFacts.includes(factName)){
                 continue;
             }
-            if(node.child(2) !== null){
+            
+            let isFunction = false;
+            for(let symbol of this.symbolTable.getSymbols()) {
+                if(symbol.declaration === DeclarationType.Functions && symbol.name === factName) {
+                    isFunction = true;
+                    if(vars[k].child(2) !== null){
+                        const args = vars[k].child(2)?.children;
+                        if(args){
+                            let arity: number = get_arity(args);
+                            this.registerfucntion(vars[k], DeclarationType.NARY, factName, arity, root, get_range(vars[k].child(0),editor));
+                        }
+                    }
+                    break;
+                }
+            }
+            
+            if(isFunction) {
+                continue; 
+            }
+
+            if(vars[k].child(2) !== null){
                 const args = vars[k].child(2)?.children;
                 if(args){
                     let arity: number = get_arity(args);
-                if(type){
-                    this.registerfucntion(vars[k], type, getName(vars[k].child(0),editor),arity, root, get_range(vars[k].child(0),editor));
-                }
-                else{
-                    this.registerfucntion(vars[k], convert(vars[k].grammarType) , getName(vars[k].child(0),editor),arity, root, get_range(vars[k].child(0),editor))
-                }
+                    if(type){
+                        this.registerfucntion(vars[k], type, factName, arity, root, get_range(vars[k].child(0),editor));
+                    }
+                    else{
+                        this.registerfucntion(vars[k], convert(vars[k].grammarType), factName, arity, root, get_range(vars[k].child(0),editor));
+                    }
                 }
             }
         }
