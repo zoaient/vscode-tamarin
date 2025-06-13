@@ -46,7 +46,7 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
     let editor = editeur;
     await Parser.init();
     const parser = new Parser();
-    const parserPath = path.join(__dirname + '../../../', 'src', 'grammar', 'parser-tamarin.wasm'); //Charge la grammaire tree-sitter pour parser
+    const parserPath = path.join(__dirname + '../../../', 'src', 'grammar','tree-sitter-tamarin', 'tree-sitter-spthy.wasm'); //Charge la grammaire tree-sitter pour parser
     const Tamarin =  await Parser.Language.load(parserPath);
     parser.setLanguage(Tamarin);
     if (!editor) {

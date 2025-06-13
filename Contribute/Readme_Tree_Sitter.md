@@ -1,49 +1,42 @@
 # Using tree-sitter in the Tamarin plugin
 
-### Installing dependencies
+First you will need to go to src/grammar/tree-sitter-tamarin folder.
+```cd src/grammar/tree-sitter-tamarin```
 
-To install the required dependencies, one can use brew:
+## Installing dependencies
+### On macOS
+```brew install tree-sitter docker podman```  TODO : update ?
+### On linux
+```sudo apt install podman``` 
+```npm install``` 
 
-```brew install tree-sitter docker podman```
+## Podman machine initialisation
+These commands are necessary to build the parser.
+`podman machine init`
+`podman machine start`
 
-Then you need to initialize and start podman as follows:
+## Updating the grammar
+This plugin uses tamarin's grammar https://github.com/tamarin-prover/tamarin-prover/blob/develop/tree-sitter/tree-sitter-spthy/grammar.js
+In order to update the grammar , you must change the grammar.js file in src/grammar/tree-sitter-tamarin folder.
+Then , do the following commands.
+```tree-sitter generate``` This command creates all the files needed to use the grammar with Typescript
+```tree-sitter build-wasm``` This command creates a dynamic .wasm library which enables you to use the parser inside the vscode plugin.
 
-`podman machine init` and `podman machine start`
-
-### Importing the grammar
-All the files required to use the grammar in the plugin are located in src/grammar/tree-sitter-tamarin.
-
-To use tree-sitter with a new grammar, use the ```tree-sitter generate``` command.
-\
- ⚠️ this command creates all the files needed to use the grammar with Typescript, for example grammar.js, as well as json and C files. In particular, the parser is created.
-
-### Importing the parser
-Then, to use the parser inside the vscode plugin, use:
-
-TODO : Remplacer ici avec la version correcte de l'ajout du parser dans le plugin vscode (voir notes du 6 Juin)
-\
-```tree-sitter build --wasm --output src/grammar/parser-tamarin.wasm```
-\
-To perform this command you need to have docker running or install the other applications suggested on tree sitter website:
-\
- https://tree-sitter.github.io/tree-sitter/creating-parsers#command-build
-\
-This command creates a dynamic .wasm library which enables you to use the parser inside the vscode plugin.
-
-### Using the parser
-There are many ways to create an instance of the parser using a new grammar. Here we use the following approach:
-\
-```Typescript 
+## Using the parser
+There are many ways to create an instance of the parser using a new grammar. Here we use the following approach.
+```Typescript
 import Parser =require( "web-tree-sitter");
 ```
-\
 And then inside a function :
-
 ```Typescript
 await Parser.init();
 const parser = new Parser();
 const Tamarin =   await Parser.Language.load('/absolute_path_to_wasm_file');
 parser.setLanguage(Tamarin);
 ```
+## Parser usages
+The parser is used in :
 
+src/symbol_table/create_symbol_table.ts
+src/features/syntax_errors.ts
 

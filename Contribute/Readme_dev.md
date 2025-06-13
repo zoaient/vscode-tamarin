@@ -21,7 +21,7 @@ The src folder is separated into various parts required for plugin operation.
 
 <br>
 
-- ```grammar```: This folder contains the files needed to use a Tree-sitter grammar inside the plugin. Its use is detailed in the ``README_TREE_SITTER.md`` file.
+- ```grammar```: This folder contains the files needed to use a Tree-sitter grammar inside the plugin. Its use is detailed in the ``Readme_Tree_Sitter.md`` file.
 
 
 <br>
