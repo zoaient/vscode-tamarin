@@ -24,7 +24,8 @@
           "tamarin"
         ],
         "extensions": [
-          ".spthy"
+          ".spthy",
+          ".splib"
         ],
         "configuration": "./language-configuration.json"
       }
