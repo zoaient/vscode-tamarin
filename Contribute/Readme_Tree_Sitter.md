@@ -17,10 +17,17 @@ These commands are necessary to build the parser.
 
 ## Updating the grammar
 This plugin uses tamarin's grammar https://github.com/tamarin-prover/tamarin-prover/blob/develop/tree-sitter/tree-sitter-spthy/grammar.js
-In order to update the grammar , you must change the grammar.js file in src/grammar/tree-sitter-tamarin folder.
+This grammar might be outdated compared to the tamarin's newest grammar, missing new functionalites.
+
+In order to update the grammar , you must change the content of grammar.js file in src/grammar/tree-sitter-tamarin folder to the current one (copy paste it).
+
 Then , do the following commands.
 ```tree-sitter generate``` This command creates all the files needed to use the grammar with Typescript
 ```tree-sitter build-wasm``` This command creates a dynamic .wasm library which enables you to use the parser inside the vscode plugin.
+
+### Things you must consider when updating the grammar
+Updating the grammar may take the symbol table and textmate grammar obsolete, be careful.
+
 
 ## Using the parser
 There are many ways to create an instance of the parser using a new grammar. Here we use the following approach.
