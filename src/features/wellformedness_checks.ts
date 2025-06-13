@@ -347,7 +347,7 @@ function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable
                 if(getNames(known_functions).includes(current_symbol.name)){
                     for(let k = 0 ; k < known_functions.length; k ++){
                         if(current_symbol.name === known_functions[k].name ){
-                            if(current_symbol.arity === known_functions[k].arity){
+                            if(current_symbol.arity === known_functions[k].arity||current_symbol.arity ===0){
                                 break;
                             }
                             else{
