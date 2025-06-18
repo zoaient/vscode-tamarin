@@ -24,7 +24,7 @@
       "name": "keyword.control"
     },
     {
-      "match": "\\b(xor|aenc|adec|senc|sdec|sign|verify|Eq|eq|hashing|signing|revealing-signing|diffie-hellman|symmetric-encryption|asymmetric-encryption|natural-numbers|multiset|bilinear-pairing|h|H|sk|pk|Fr|In|Out|K|diff)\\b",
+      "match": "\\b(xor|aenc|adec|senc|sdec|sign|verify|Eq|eq|hashing|signing|revealing-signing|diffie-hellman|natural-numbers|symmetric-encryption|asymmetric-encryption|multiset|bilinear-pairing|h|H|sk|pk|Fr|In|Out|K|diff)\\b",
       "name": "variable.language"
     },
     {
