@@ -144,7 +144,6 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "test": "node ./out/test/runTest.js",
-    "install": "node-gyp-build",
     "prebuildify": "prebuildify --napi --strip"
   },
   "devDependencies": {
