@@ -45,36 +45,6 @@
     ],
     "commands": [
       {
-        "command": "tamarin.checkSyntax",
-        "title": "Tamarin Check Syntax",
-        "when": "editorLangId == tamarin"
-      },
-      {
-        "command": "tamarin.checkSemantics",
-        "title": "Tamarin Check Semantics",
-        "when": "editorLangId == tamarin"
-      },
-      {
-        "command": "tamarin.runServer",
-        "title": "Tamarin Run Code in Server",
-        "when": "editorLangId == tamarin"
-      },
-      {
-        "command": "tamarin.runConsoleProofCommand",
-        "title": "Tamarin Run Code in Console",
-        "when": "editorLangId == tamarin"
-      },
-      {
-        "command": "tamarin.play",
-        "title": "Run Tamarin",
-        "when": "editorLangId == tamarin"
-      },
-      {
-        "command": "tamarin.play2",
-        "title": "Run Tamarin with auto-sources option",
-        "when": "editorLangId == tamarin"
-      },
-      {
         "command": "tamarin.renameCodeAction",
         "when": "editorLangId == tamarin",
         "title": "Rename"
@@ -101,26 +71,6 @@
       }
     ],
     "keybindings": [
-      {
-        "command": "tamarin.checkSyntax",
-        "key": "ctrl+alt+q",
-        "when": "resourceLangId == tamarin"
-      },
-      {
-        "command": "tamarin.checkSemantics",
-        "key": "ctrl+alt+b",
-        "when": "resourceLangId == tamarin"
-      },
-      {
-        "command": "tamarin.runServer",
-        "key": "ctrl+alt+l",
-        "when": "resourceLangId == tamarin"
-      },
-      {
-        "command": "tamarin.runConsoleProofCommand",
-        "key": "ctrl+alt+p",
-        "when": "resourceLangId == tamarin"
-      },
       {
         "key": "ctrl+alt+n",
         "command": "extension.tabKeyBinding",

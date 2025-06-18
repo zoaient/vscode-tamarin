@@ -136,7 +136,7 @@ export function get_range(node : Parser.SyntaxNode|null, editor : vscode.TextEdi
 export async function parseText(includedFileText : string):Promise<Parser.SyntaxNode>{
     await Parser.init();
     const parser = new Parser();
-    const parserPath = path.join(__dirname, '..', 'grammar', 'tree-sitter-tamarin', 'tree-sitter-spthy.wasm'); //Charge la grammaire tree-sitter pour parser
+    const parserPath = path.join(__dirname, '..', 'grammar', 'tree-sitter-tamarin', 'tree-sitter-spthy.wasm');
     const Tamarin = await Parser.Language.load(parserPath);
     parser.setLanguage(Tamarin);
     const tree = parser.parse(includedFileText);

@@ -5,11 +5,9 @@ test/**
 .git*
 *.vsix
 
-# Fichiers de configuration de développement
+
 tsconfig.json
 .eslintrc.json
 
-# Dépendances de développement qui ne doivent pas être dans le package
 node_modules/mocha/**
 node_modules/@types/**
-# ... ajoutez ici d'autres devDependencies si nécessaire
