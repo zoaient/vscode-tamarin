@@ -186,21 +186,15 @@
   },
   "license": "MIT",
   "files": [
-    "binding.gyp",
-    "prebuilds/**",
-    "bindings/node/*",
     "src/features/**",
-    "src/grammar/parser-tamarin.wasm",
+    "src/grammar/tree-sitter-tamarin/tree-sitter-spthy.wasm",
     "src/features/**",
     "src/extension.ts",
     "syntaxes/tamarin.tmLanguage.json",
     "out/**",
-    "LICENSE",
     "package.json",
-    "Readme.md",
+    "README.md",
     "images/**",
-    "node_modules/vscode-languageclient",
-    "node_modules/web-tree-sitter",
     "language-configuration.json"
   ],
   "tree-sitter": [

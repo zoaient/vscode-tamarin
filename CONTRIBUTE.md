@@ -17,7 +17,7 @@ This section is detailed in the `Contribute/readme_dev.md` file .
 
 ## How to use tree-sitter with the extension
 
-This section is detailed in the `Contribute/Readme_Tree_Sitter.md` file .
+This section is detailed in the `Contribute/Readme_Parser.md` file .
 
 ## How to publish a new release
 

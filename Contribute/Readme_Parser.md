@@ -23,11 +23,10 @@ In order to update the grammar , you must change the content of grammar.js file 
 
 Then , do the following commands.
 ```tree-sitter generate``` This command creates all the files needed to use the grammar with Typescript
-```tree-sitter build-wasm``` This command creates a dynamic .wasm library which enables you to use the parser inside the vscode plugin.
+```tree-sitter build-wasm``` This command creates a dynamic .wasm library which enables you to use the parser inside the vscode plugin (src/grammar/tree-sitter-tamarin/tree-sitter-spthy.wasm).
 
 ### Things you must consider when updating the grammar
 Updating the grammar may take the symbol table and textmate grammar obsolete, be careful.
-
 
 ## Using the parser
 There are many ways to create an instance of the parser using a new grammar. Here we use the following approach.
