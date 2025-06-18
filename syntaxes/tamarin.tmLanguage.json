@@ -1,6 +1,7 @@
 {
   "fileTypes": [
-    ".spthy"
+    ".spthy",
+    ".splib"
   ],
   "name": "tamarin",
   "patterns": [
