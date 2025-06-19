@@ -224,8 +224,8 @@ const AssociatedFunctions: string[][] =
 ['h', '1'],
 ['sdec', '2', 'senc', '2'],
 ['aenc', '2', 'adec', '2', 'pk', '1'],
-['sign', '2', 'verify', '3', 'pk', '1'],
-['revealSign', '2', 'revealVerify', '3', 'getMessage', '1', 'pk', '1'],
+['sign', '2', 'verify', '3', 'pk', '1', 'true', '0'],
+['revealSign', '2', 'revealVerify', '3', 'getMessage', '1', 'pk', '1', 'true', '0'],
 ['pmult', '2', 'em', '2'],
 ['XOR', '2', 'zero', '0'],
 ['fst', '1', 'snd', '1', 'pair', '2']
@@ -512,7 +512,6 @@ class SymbolTableVisitor{
             if(ReservedFacts.includes(factName)){
                 continue;
             }
-            
             let isFunction = false;
             for(let symbol of this.symbolTable.getSymbols()) {
                 if(symbol.declaration === DeclarationType.Functions && symbol.name === factName) {
@@ -527,11 +526,9 @@ class SymbolTableVisitor{
                     break;
                 }
             }
-            
             if(isFunction) {
                 continue; 
             }
-
             if(vars[k].child(2) !== null){
                 const args = vars[k].child(2)?.children;
                 if(args){

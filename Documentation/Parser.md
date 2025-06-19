@@ -16,8 +16,8 @@ These commands are necessary to build the parser.
 `podman machine start`
 
 ## Updating the grammar
-This plugin uses tamarin's grammar https://github.com/tamarin-prover/tamarin-prover/blob/develop/tree-sitter/tree-sitter-spthy/grammar.js
-This grammar might be outdated compared to the tamarin's newest grammar, missing new functionalites.
+This plugin uses [tamarin's grammar](https://github.com/tamarin-prover/tamarin-prover/blob/develop/tree-sitter/tree-sitter-spthy/grammar.js)
+This grammar might be outdated compared to the tamarin's newest grammar, missing new functionalities.
 
 In order to update the grammar , you must change the content of grammar.js file in src/grammar/tree-sitter-tamarin folder to the current one (copy paste it).
 
@@ -37,12 +37,11 @@ And then inside a function :
 ```Typescript
 await Parser.init();
 const parser = new Parser();
-const Tamarin =   await Parser.Language.load('/absolute_path_to_wasm_file');
+const Tamarin = await Parser.Language.load('/absolute_path_to_wasm_file');
 parser.setLanguage(Tamarin);
 ```
 ## Parser usages
 The parser is used in :
-
-src/symbol_table/create_symbol_table.ts
-src/features/syntax_errors.ts
+- [create_symbol_table.ts](src/symbol_table/create_symbol_table.ts)
+- [syntax_errors.ts](src/features/syntax_errors.ts)
 
