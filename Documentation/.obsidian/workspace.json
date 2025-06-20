@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Language Server.md",
+                "file": "Release.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Language Server"
+              "title": "Release"
             }
           }
         ],
@@ -185,8 +185,8 @@
   },
   "active": "e2acf683c1bb814e",
   "lastOpenFiles": [
-    "Release.md",
     "Parser.md",
+    "Release.md",
     "Overview.md",
     "Language Server.md",
     "Highlighting.md",
