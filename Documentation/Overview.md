@@ -10,7 +10,7 @@ At the root of the project there are several .json files:
 The src folder is separated into various parts required for plugin operation.
 
 - ``extension.ts``: This is the file used to launch the extension. It contains the ``activate`` function, which contains all the tasks performed when the plugin is activated.
-- ```grammar```: This folder contains the files needed to use a Tree-sitter grammar inside the plugin. Its use is detailed in the ``Readme_Tree_Sitter.md`` file.
+- ```grammar```: This folder contains the files needed to use a Tree-sitter grammar inside the plugin. Its use is detailed in the ``Documentation/Parser`` file.
 - ``symbol_table``: contains a file used to create a symbol table for each open Tamarin file in the editor. The symbol table contains ```TamarinSymbol```,  each symbol is associated with:
 	- A tree node corresponding to the symbol itself, a type, another node corresponding to the context in which this symbol appears (rule, lemma, formula in a lemma), a name and associated range in the tamarin file, an arity if it's a fact or a function, a type if it's a variable (public, fresh ...), and a ``quantified_formula`` node for variables in lemmas.
   - The various useful node types are listed in the ``DeclarationType`` enumeration.
