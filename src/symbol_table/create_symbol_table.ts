@@ -215,6 +215,7 @@ const ExistingBuiltIns : string[] =
     'bilinear-pairing',
     'xor',
     'default',
+    'natural-numbers'
 ]
 
 //First the name and then the arity also mind the order above (inv and 1 are diffie-hellman functions etc …)
@@ -374,48 +375,6 @@ class SymbolTableVisitor{
             else if( child?.grammarType === DeclarationType.Rule_let_block){
                 this.register_vars_rule(child, DeclarationType.PRVariable, editor, root)
             }
-            /*else if (child?.grammarType === 'include'){
-                const fileName = getName(child.child(2), editor);
-                const currentFileDir = path.dirname(editor.document.uri.fsPath);
-                const filePath = path.join(currentFileDir, fileName);
-                const includedFileUri = vscode.Uri.file(filePath);
-                const includedDocument = await vscode.workspace.openTextDocument(includedFileUri);
-                //Fake editor containing the right document to manage the includes 
-                const includedEditor = {
-                    document: includedDocument,
-                    selection: new vscode.Selection(0, 0, 0, 0),
-                    selections: [new vscode.Selection(0, 0, 0, 0)], // Example selections
-                    options: { tabSize: 4, insertSpaces: true }, // Example options
-                    viewColumn: vscode.ViewColumn.One, // Example view column
-                    visibleRanges: [new vscode.Range(0, 0, 0, 0)], // Example visible ranges
-                    edit(callback: (editBuilder: vscode.TextEditorEdit) => void, options?: { undoStopBefore: boolean; undoStopAfter: boolean }): Thenable<boolean> {
-                        throw new Error('Method not implemented.');
-                    },
-                    insertSnippet(snippet: vscode.SnippetString | vscode.SnippetString[], location?: vscode.Range | vscode.Position | vscode.Position[], options?: { undoStopBefore: boolean; undoStopAfter: boolean }): Thenable<boolean> {
-                        throw new Error('Method not implemented.');
-                    },
-                    setDecorations(decorationType: vscode.TextEditorDecorationType, rangesOrOptions: vscode.Range[] | vscode.DecorationOptions[]): void {
-                        throw new Error('Method not implemented.');
-                    },
-                    revealRange(range: vscode.Range, revealType?: vscode.TextEditorRevealType): void {
-                        throw new Error('Method not implemented.');
-                    },
-                    show(column?: vscode.ViewColumn): void {
-                        throw new Error('Method not implemented.');
-                    },
-                    hide(): void {
-                        throw new Error('Method not implemented.');
-                    }
-                };
-                
-                if (includedEditor) {
-                    const includedFileContent = await vscode.workspace.fs.readFile(includedFileUri);
-                    const includedFileText = includedFileContent.toString();
-
-                    const tree_root = await parseText(includedFileText);
-                    await this.visit(tree_root, includedEditor, diags);
-                }
-            }*/
             else{
                 if(child !== null){
                     await this.visit(child, editor, diags);
@@ -476,7 +435,15 @@ class SymbolTableVisitor{
         let vars: Parser.SyntaxNode[] = find_variables(node);
         for(let k = 0; k < vars.length; k++){
             let context: Parser.SyntaxNode = vars[k];
-            while(context.grammarType !== DeclarationType.NF  && context.grammarType !== 'conjunction' && context.grammarType !== 'disjunction' && (context.grammarType !== DeclarationType.Lemma && context.grammarType !== DeclarationType.Restriction && context.grammarType !== 'diff_lemma') ){
+            while(context.grammarType !== DeclarationType.NF && 
+                context.grammarType !== 'conjunction' && 
+                context.grammarType !== 'disjunction' && 
+                context.grammarType !== DeclarationType.Lemma && 
+                context.grammarType !== DeclarationType.Restriction && 
+                context.grammarType !== 'diff_lemma' &&
+                context.grammarType !== 'term_eq' &&
+                context.grammarType !== 'temp_var_eq'
+                ){
                 if(context.parent){
                     context = context.parent;
                 }

@@ -494,6 +494,28 @@ function check_macro_not_in_equation(symbol_table : TamarinSymbolTable, editor: 
     }
 }
 
+// Function to check if the types of two variables are the same, used in equations
+function check_equality_types(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
+    for(let i =0; i < symbol_table.getSymbols().length; i++){
+        let symbol= symbol_table.getSymbol(i);
+        if(symbol.context.grammarType === 'temp_var_eq' ||symbol.context.grammarType === 'term_eq'){
+            i++;
+            let type = symbol.type;
+            let name = symbol.name;
+            let declaration = symbol.declaration;
+            let verified = false;
+            for(let compared_symbol of symbol_table.getSymbols()){
+                if(compared_symbol.name=== name && compared_symbol.declaration === declaration && !verified){
+                    if(compared_symbol.type !== type){
+                        build_error_display(symbol.node, editor, diags, "Error : the type of the variable " + name + " is not the same as declared before, expected " + compared_symbol.type + " but got " + type);
+                    }
+                    verified = true;
+                }
+            }
+        }
+    }
+}
+
 /* Given a symbol table returns all the builtins present in it */ 
 function return_builtins(symbol_table: TamarinSymbolTable): TamarinSymbol[]{
 let builtins : TamarinSymbol[]  = [];
@@ -627,11 +649,24 @@ vscode.languages.registerCodeActionsProvider('tamarin', {
 });
 
 export function checks_with_table(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[], root : Parser.SyntaxNode){
+    console.log("Tamarin Symbol Table:");
+    for (const symbol of symbol_table.getSymbols()) {
+        console.log({
+            name: symbol.name,
+            declaration: symbol.declaration,
+            type: symbol.type,
+            arity: symbol.arity,
+            context: symbol.context?.grammarType,
+            nodeId: symbol.node?.id
+        });
+    }
+
+
+    //check_equality_types(symbol_table, editor, diags);
     check_variables_type_is_consistent_inside_a_rule(symbol_table, editor, diags);
     check_variable_is_defined_in_premise(symbol_table, editor, diags);
     check_action_fact(symbol_table, editor, diags);
     check_function_macros_and_facts_arity(symbol_table, editor, diags);
-    //checkArityProblems(symbol_table,editor,diags);
     check_free_term_in_lemma(symbol_table, editor, diags);
     check_macro_not_in_equation(symbol_table, editor, diags)
     check_infix_operators(symbol_table, editor, diags, root);
