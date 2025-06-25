@@ -498,8 +498,8 @@ function check_macro_not_in_equation(symbol_table : TamarinSymbolTable, editor: 
 function check_equality_types(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     for(let i =0; i < symbol_table.getSymbols().length; i++){
         let symbol= symbol_table.getSymbol(i);
-        if(symbol.context.grammarType === 'temp_var_eq' ||symbol.context.grammarType === 'term_eq'){
-            i++;
+        if(symbol.context.grammarType === 'temp_var_eq' ||symbol.context.grammarType === 'term_eq'){ //both nodes are used in equalites
+            i++; //only the left side of the equation needs to be checked
             let type = symbol.type;
             let name = symbol.name;
             let declaration = symbol.declaration;
@@ -662,7 +662,7 @@ export function checks_with_table(symbol_table : TamarinSymbolTable, editor: vsc
     }
 
 
-    //check_equality_types(symbol_table, editor, diags);
+    check_equality_types(symbol_table, editor, diags);
     check_variables_type_is_consistent_inside_a_rule(symbol_table, editor, diags);
     check_variable_is_defined_in_premise(symbol_table, editor, diags);
     check_action_fact(symbol_table, editor, diags);

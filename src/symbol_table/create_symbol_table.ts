@@ -441,8 +441,8 @@ class SymbolTableVisitor{
                 context.grammarType !== DeclarationType.Lemma && 
                 context.grammarType !== DeclarationType.Restriction && 
                 context.grammarType !== 'diff_lemma' &&
-                context.grammarType !== 'term_eq' &&
-                context.grammarType !== 'temp_var_eq'
+                context.grammarType !== 'term_eq' && //node used in equalities
+                context.grammarType !== 'temp_var_eq' //node used in equalities between temporal variables
                 ){
                 if(context.parent){
                     context = context.parent;
