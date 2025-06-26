@@ -3,10 +3,15 @@
 		"module": "commonjs",
 		"target": "es2020",
 		"lib": ["es2020"],
-		"outDir": "out",
+		"sourceMap": true,
+		"strict": true,
 		"rootDir": "src",
-		"sourceMap": true
+		"composite": true, 
+		"declaration": true, 
+		"declarationMap": true,
+		"outDir": "out"
 	},
-	"include": ["src"],
-	"exclude": ["node_modules", ".vscode-test"]
+	"include": ["src/**/*"],
+	"exclude": ["node_modules", ".vscode-test"],
+	"references": [{ "path": "../server" }]
 }
