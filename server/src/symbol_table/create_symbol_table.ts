@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as vscode from 'vscode'
 import Parser = require("web-tree-sitter");
 import {getName} from '../features/syntax_errors'

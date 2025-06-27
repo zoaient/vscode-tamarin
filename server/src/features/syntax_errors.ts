@@ -1,12 +1,12 @@
 import path = require('path');
-import * as vscode from 'vscode'
 import Parser =require( "web-tree-sitter");
-import { CreateSymbolTableResult, createSymbolTable } from '../symbol_table/create_symbol_table';
-import { Range } from 'vscode';
+//import { CreateSymbolTableResult, createSymbolTable } from '../symbol_table/create_symbol_table';
+import { Diagnostic , DiagnosticSeverity ,Range , Position} from 'vscode-languageserver';
+import { TextDocument } from "vscode-languageserver-textdocument";
 
 
-let diagnostics = vscode.languages.createDiagnosticCollection('Tamarin');
-export let symbolTables = new Map<string, CreateSymbolTableResult>();
+
+//export let symbolTables = new Map<string, CreateSymbolTableResult>();
 
 
 //given an node returns his index in his father's children list 
@@ -25,13 +25,14 @@ function get_child_index(node : Parser.SyntaxNode): number|null{
 }
 
 // Get the text corresponding to a node range 
-export function getName(node : Parser.SyntaxNode| null, editor: vscode.TextEditor): string {
-    if(node && node.isNamed ){
-        return(editor.document.getText(new Range(editor.document.positionAt(node.startIndex),editor.document.positionAt(node.endIndex))));
-        
-    }
-    else{
-        return "None"
+export function getName(node : Parser.SyntaxNode| null, document: TextDocument): string {
+    if (node && node.isNamed) {
+        return document.getText(Range.create(
+            document.positionAt(node.startIndex),
+            document.positionAt(node.endIndex)
+        ));
+    } else {
+        return "None";
     }
 }
 
@@ -42,64 +43,68 @@ export function getName(node : Parser.SyntaxNode| null, editor: vscode.TextEdito
 /* Function used to detect syntax errors sent by the parser with MISSING or ERROR nodes,
 I tried to personnalize error messages according to the different cases
 I did the most common ones*/
-export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.SyntaxNode|void> {
-    let editor = editeur;
+export async function detect_errors(document: TextDocument): Promise<{ tree: Parser.SyntaxNode, diagnostics: Diagnostic[] }> {
     await Parser.init();
     const parser = new Parser();
     const parserPath = path.join(__dirname, '..', 'grammar', 'tree-sitter-tamarin', 'tree-sitter-spthy.wasm'); //Charge la grammaire tree-sitter pour parser
     const Tamarin =  await Parser.Language.load(parserPath);
     parser.setLanguage(Tamarin);
-    if (!editor) {
-        return;
-    }
-    let diags: vscode.Diagnostic[] = [];
-    let text = editor.document.getText();
+    let diags: Diagnostic[] = [];
+    let text = document.getText();
     const tree =  parser.parse(text);
 
     
-    function build_error_display(node : Parser.SyntaxNode, editeur: vscode.TextEditor, message : string){
-        let start = node.startIndex;
-        let positionStart = editeur.document.positionAt(start);
-        let existingDiag = diags.find(d => d.range.contains(positionStart)); // Evite les superpositions de diagnostics
-        if (!existingDiag) {
-        diags.push(new vscode.Diagnostic(new vscode.Range(positionStart, positionStart.translate(0,0) ), message, vscode.DiagnosticSeverity.Error));
-        }
+    function build_error_display(node: Parser.SyntaxNode, message: string) {
+        const start = document.positionAt(node.startIndex);
+        const end = document.positionAt(node.endIndex > node.startIndex ? node.endIndex : node.startIndex + 1);
+        diags.push({
+            range: Range.create(start, end),
+            message,
+            severity: DiagnosticSeverity.Error,
+            source: "tamarin"
+        });
     }
-
     // This is where i tried to detect particular cases for syntax errors based on nodes position 
-    function typesOfError(node : Parser.SyntaxNode, editeur: vscode.TextEditor){
+    function typesOfError(node : Parser.SyntaxNode){
         if(node.grammarType === 'theory' || node.nextSibling?.nextSibling?.grammarType === 'begin' || node.nextSibling?.grammarType === 'begin'){
-            build_error_display(node, editeur, "MISSING 'theory' or 'begin'")
+            build_error_display(node, "MISSING 'theory' or 'begin'")
 
         }
         else if(node.firstChild?.grammarType === "builtins" || node.firstChild?.grammarType === "functions" || node.firstChild?.grammarType === "macros" ){
-            build_error_display(node, editeur, "MISSING ':' ");
+            build_error_display(node, "MISSING ':' ");
         }
         else if ( node.nextSibling?.grammarType === 'built_in'){
-            build_error_display(node, editeur, "MISSING ',' ");   
+            build_error_display(node, "MISSING ',' ");   
         }
         else if(node.firstChild?.grammarType === "rule" && (node.firstChild.nextSibling?.grammarType != "ident" || node.firstChild.nextSibling?.nextSibling?.grammarType != ":") ){
-            build_error_display(node, editeur, "MISSING ':' or rule name ");
+            build_error_display(node, "MISSING ':' or rule name ");
         }
         else if(node.firstChild?.grammarType === "lemma"){
-            build_error_display(node, editeur, "MISSING ':' or lemma name ");
+            build_error_display(node, "MISSING ':' or lemma name ");
         }
         else if (node.firstChild?.grammarType === "premise" || (node.firstChild?.grammarType === "rule" && (node.firstChild.nextSibling?.grammarType === "ident" || node.firstChild.nextSibling?.nextSibling?.grammarType === ":"))){
-            build_error_display(node, editeur, "ERROR in rule structure the syntax for a rule is either \n []-->[] \n or \n []--[]->[]")
+            build_error_display(node, "ERROR in rule structure the syntax for a rule is either \n []-->[] \n or \n []--[]->[]")
         }
         else if(node.firstChild?.grammarType === "pre_defined"){
-            build_error_display(node, editeur, "MISSING generalized quantifier");
+            build_error_display(node, "MISSING generalized quantifier");
         }
         else if (node.firstChild?.grammarType === "nested_formula" || node.firstChild?.grammarType === "action_constraint" || node.firstChild?.grammarType === "conjunction"){
-            build_error_display(node, editeur, "EXPECTING '&', '∧', '|', '∨', '==>'");
+            build_error_display(node, "EXPECTING '&', '∧', '|', '∨', '==>'");
         }
         else {
-            build_error_display(node, editeur, node.toString().slice(1,-1));
+            build_error_display(node, node.toString().slice(1,-1));
         }
     }
+
+    function rangeContains(range: Range, pos: Position): boolean {
+        if (pos.line < range.start.line || pos.line > range.end.line) return false;
+        if (pos.line === range.start.line && pos.character < range.start.character) return false;
+        if (pos.line === range.end.line && pos.character > range.end.character) return false;
+    return true;
+}
  
     // PLace where missing and error nodes are detected, then builds the error
-    function findMatches(node : Parser.SyntaxNode, editeur: vscode.TextEditor ) {
+    function findMatches(node : Parser.SyntaxNode) {
         if ((node.isMissing)) {
             let myId = get_child_index(node);
             if(myId === null){
@@ -113,46 +118,43 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
                 else {
                     start = 0
                 }
-                let positionStart = editeur.document.positionAt(start?? 0);
-                let existingDiag = diags.find(d => d.range.contains(positionStart)); 
+                let positionStart = document.positionAt(start?? 0);
+                const range = Range.create(positionStart, Position.create(positionStart.line, positionStart.character + 1));
+                const existingDiag = diags.find(d => rangeContains(d.range, positionStart));
                 if (!existingDiag) {
-                    diags.push(new vscode.Diagnostic(new vscode.Range(positionStart, positionStart.translate(0,1) ), node.toString().slice(1, -1), vscode.DiagnosticSeverity.Error));
+                    diags.push({
+                        range,
+                        message: node.toString().slice(1, -1),
+                        severity: DiagnosticSeverity.Error,
+                        source: "tamarin"
+                    });
                 }
             }
             else {
-            build_error_display(node, editeur ,node.toString().slice(1,-1));
+            build_error_display(node ,node.toString().slice(1,-1));
             }
         }
         else if (node.isError){
             if (node.firstChild && node.firstChild.grammarType === "multi_comment") {
                 const childNode = node.child(1);
                 if (childNode) {
-                  typesOfError(childNode, editeur);
+                  typesOfError(childNode);
                 }
             } 
             else {
-                typesOfError(node, editeur);
+                typesOfError(node);
             }
 
-            diagnostics.set(editeur.document.uri, diags);
+            //diagnostics.set(document.uri, diags);
             return;
         }
         // This is used to send a warning if there is code after end node 
         else if (node.grammarType === 'end'){
-        const endPosition = editor.document.positionAt(node.endIndex);
-        const endOfDocumentPosition = editor.document.positionAt(editor.document.getText().length);
-        const unreachableRange = new vscode.Range(endPosition, endOfDocumentPosition);
-        let unreachableDecoration = vscode.window.createTextEditorDecorationType({
-            textDecoration: 'none; opacity: 1; background-color: none; border: none;',
-            dark: {
-                textDecoration: 'none; opacity: 1; background-color: none; border: none;',
-            }
-        });
-        // I tried to do sth transparent with opacity 0.5 but it brought bugs
-
-        //Part to detect if there is code after the end
+        const endPosition = document.positionAt(node.endIndex);
+        const endOfDocumentPosition = document.positionAt(document.getText().length);
+        const unreachableRange = Range.create(endPosition, endOfDocumentPosition);
         let hasContentAfterEnd = false;
-        const text = editor.document.getText();
+        const text = document.getText();
         let inMultiLineComment = false;
         for (let lineNum = endPosition.line + 1; lineNum <= endOfDocumentPosition.line; lineNum++) {
             const line = text.split('\n')[lineNum];
@@ -172,38 +174,36 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
         }
         
         if (hasContentAfterEnd) {
-            // Clear existing decorations
-            editor.setDecorations(unreachableDecoration, []);
-        
-            // Apply new decorations
-            editor.setDecorations(unreachableDecoration, [unreachableRange]);
-        
             const message = "Code unreachable";
-            const severity = vscode.DiagnosticSeverity.Warning;
-            const diagnostic = new vscode.Diagnostic(unreachableRange, message, severity);
-            diags.push(diagnostic);
+            const severity = DiagnosticSeverity.Warning;
+            diags.push({
+                range: unreachableRange,
+                message,
+                severity,
+                source: "tamarin"
+            });
         } 
 
         }
 
         // Iterate over all the AST
         for (let child of node.children) {
-            findMatches(child,editeur);
+            findMatches(child);
         }
         
     }
 
-    findMatches(tree.rootNode,editor);
+    findMatches(tree.rootNode);
 
-   diagnostics.set(editor.document.uri, diags);
+    //diagnostics.set(document.uri, diags);
 
-    return tree.rootNode;
+    return { tree: tree.rootNode, diagnostics: diags };
     
 }
 
 
-// Main function everytime the document changes create a corresponding symbol table and seex syntax errors, could be improved 
-export function display_syntax_errors(context: vscode.ExtensionContext): void {
+/* Main function everytime the document changes create a corresponding symbol table and seex syntax errors, could be improved 
+export function display_syntax_errors(context: string):Diagnostic[] {
 
     const changed_content = vscode.workspace.onDidChangeTextDocument((event) => {
     
@@ -212,7 +212,7 @@ export function display_syntax_errors(context: vscode.ExtensionContext): void {
                return;
             }
             if (editor.document === event.document) {
-                const tree = await detect_errors(editor);
+                const tree = await detect_errors(editor,diagnostics);
                 if (tree) {
                     const table = createSymbolTable(tree, editor);
                     const fileName = editor.document.uri.path.split('/').pop(); 
@@ -220,7 +220,6 @@ export function display_syntax_errors(context: vscode.ExtensionContext): void {
                         throw new Error('Could not determine file name');
                     }  
                     symbolTables.set(fileName, await table);
-                    console.log(symbolTables)   // usefull for debugging symbol table 
                 }
             }
         });
@@ -239,10 +238,10 @@ export function display_syntax_errors(context: vscode.ExtensionContext): void {
     });
 
 
-    context.subscriptions.push(changed_content, diagnostics);  
+    context.subscriptions.push(changed_content);  
 }
 
-
+*/
 
 
 

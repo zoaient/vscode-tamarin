@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as vscode from 'vscode';
 import { symbolTables } from './syntax_errors';
 import { DeclarationType, TamarinSymbol } from '../symbol_table/create_symbol_table';

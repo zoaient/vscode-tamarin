@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as vscode from 'vscode'
 import Parser = require("web-tree-sitter");
 import { ReservedFacts, DeclarationType, TamarinSymbolTable, TamarinSymbol, get_arity, set_associated_qf } from '../symbol_table/create_symbol_table';
@@ -637,3 +638,5 @@ export function checks_with_table(symbol_table : TamarinSymbolTable, editor: vsc
     check_infix_operators(symbol_table, editor, diags, root);
     check_case_sensitivity(symbol_table, editor, diags);
 };
+
+

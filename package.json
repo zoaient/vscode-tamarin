@@ -101,7 +101,7 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "clean": "rimraf client/out server/out client/tsconfig.tsbuildinfo server/tsconfig.tsbuildinfo",
-    "compile": "tsc -b tsconfig.json",
+    "compile": "tsc -b tsconfig.json && cp -r server/grammar server/out/",
     "lint": "eslint client/src server/src --ext ts",
     "watch": "tsc -b tsconfig.json -w",
     "pretest": "npm run compile && npm run lint",

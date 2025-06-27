@@ -4,11 +4,12 @@ import {
     createConnection,
     ProposedFeatures, 
     TextDocuments, 
-    Diagnostic,
     InitializeParams,
     ServerCapabilities,
     TextDocumentSyncKind 
 } from 'vscode-languageserver/node';
+
+import { AnalyseDocument } from './AnalysisManager';
 
 
 console.error('[Server] Tamarin Language Server starting...');
@@ -29,18 +30,14 @@ connection.onInitialized(() => {
     console.error('[Server] Received "initialized" notification. Handshake complete!');
 });
 
-documents.onDidChangeContent(change => {
+documents.onDidChangeContent(async (change) => {
     console.error(`[Server] File changed: ${change.document.uri}. Triggering validation.`);
-    validateTextDocument(change.document);
+    const diagnostics = await AnalyseDocument(change.document);
+
+    connection.sendDiagnostics({ uri: change.document.uri, diagnostics });
+    console.error(`[Server] Diagnostics sent for ${change.document.uri}.`);
 });
 
 
-async function validateTextDocument(textDocument: TextDocument): Promise<void> {
-    const text = textDocument.getText();
-    const diagnostics: Diagnostic[] = [];
-    connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-}
-
 documents.listen(connection);
-
 connection.listen();
