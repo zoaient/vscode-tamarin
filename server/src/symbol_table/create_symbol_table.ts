@@ -1,7 +1,7 @@
 import { TextDocument } from "vscode-languageserver-textdocument";
 import Parser = require("web-tree-sitter");
 import { Range, Position } from 'vscode-languageserver/node';
-//import { check_reserved_facts, checks_with_table } from '../features/wellformedness_checks';
+import { check_reserved_facts, checks_with_table } from '../features/wellformedness_checks';
 import {getName} from '../features/syntax_errors'
 import { Diagnostic } from "vscode-languageserver-types";
 import path = require('path');
@@ -9,18 +9,6 @@ import path = require('path');
 export type CreateSymbolTableResult = {
     symbolTable: TamarinSymbolTable
 };
-
-
-function check_reserved_facts(node: Parser.SyntaxNode, document: TextDocument, diags: Diagnostic[]){
-    if(node.grammarType === DeclarationType.LinearF && ReservedFacts.includes(getName(node.child(0), document))){
-        diags.push({
-            severity: 1,
-            range: get_range(node),
-            message: `The fact ${getName(node.child(0), document)} is reserved and cannot be used as a symbol.`,
-            source: 'Tamarin Language Server'
-        });
-    }
-}
 
 
 /* Function used to register the symbol table for each file */ 
@@ -32,7 +20,7 @@ export const createSymbolTable = async (root : Parser.SyntaxNode, document: Text
 
     symbolTable.setRootNodedocumentDiags(root, document, diags);
     convert_linear_facts(symbolTable);
-    //checks_with_table(symbolTable, document, diags, root) TODO FAIRE
+    checks_with_table(symbolTable, document, diags, root);
     return {symbolTable};
 };
 

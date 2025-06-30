@@ -8,23 +8,14 @@ import { CreateSymbolTableResult ,createSymbolTable } from "./symbol_table/creat
 export let symbolTables = new Map<string, CreateSymbolTableResult>();
 
 export async function AnalyseDocument(document: TextDocument): Promise<Diagnostic[]> {
-
     const { tree, diagnostics: syntaxDiagnostics } = await detect_errors(document);
     const { symbolTable } = await createSymbolTable(tree, document);
     symbolTables.set(document.uri, { symbolTable });
-
-    // DEBUG : Log au bon moment !
     console.log("Symbol table created for:", document.uri);
     console.log("Number of symbols found:", symbolTable.getSymbols().length);
-    console.log("Symbol Table content:", symbolTable); // Décommentez pour voir le contenu
-
-    // --- ÉTAPE 3 : Lancer d'autres checks sémantiques qui utilisent la table ---
-    // const semanticErrors = check_other_things(symbolTable, tree);
-
-    // --- ÉTAPE 4 : Centraliser et retourner TOUS les diagnostics ---
+    console.log("Symbol Table content:", symbolTable);
     const allDiagnostics = [
         ...syntaxDiagnostics
-        // ...semanticErrors
     ];
     
     return allDiagnostics;

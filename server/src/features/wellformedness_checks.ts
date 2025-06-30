@@ -1,30 +1,32 @@
-// @ts-nocheck
-import * as vscode from 'vscode'
+
 import Parser = require("web-tree-sitter");
 import { ReservedFacts, DeclarationType, TamarinSymbolTable, TamarinSymbol, get_arity, set_associated_qf } from '../symbol_table/create_symbol_table';
 import { getName } from './syntax_errors';
+import { TextDocument } from "vscode-languageserver-textdocument";
+import { Diagnostic , DiagnosticSeverity ,Range , Position} from 'vscode-languageserver';
 
 
 
-
-function build_error_display(node : Parser.SyntaxNode, editeur: vscode.TextEditor, diags : vscode.Diagnostic[], message : string): vscode.Diagnostic{
-    let start = node.startIndex;
-    let end  = node.endIndex;
-    let positionStart = editeur.document.positionAt(start);
-    let positionEnd = editeur.document.positionAt(end);
-    let diag = new vscode.Diagnostic(new vscode.Range(positionStart, positionEnd ), message, vscode.DiagnosticSeverity.Error);
-    diags.push(diag);
-    return diag;
+function build_error_display(node : Parser.SyntaxNode, document: TextDocument, diags : Diagnostic[], message : string){
+    const start = document.positionAt(node.startIndex);
+    const end = document.positionAt(node.endIndex > node.startIndex ? node.endIndex : node.startIndex + 1);
+    diags.push({
+        range: Range.create(start, end),
+        message,
+        severity: DiagnosticSeverity.Error,
+        source: "tamarin"
+    });
 }
 
-function build_warning_display(node : Parser.SyntaxNode, editeur: vscode.TextEditor, diags : vscode.Diagnostic[], message : string): vscode.Diagnostic{
-    let start = node.startIndex;
-    let end  = node.endIndex;
-    let positionStart = editeur.document.positionAt(start);
-    let positionEnd = editeur.document.positionAt(end);
-    let diag = new vscode.Diagnostic(new vscode.Range(positionStart, positionEnd ), message, vscode.DiagnosticSeverity.Warning);
-    diags.push(diag);
-    return diag;
+function build_warning_display(node : Parser.SyntaxNode, document: TextDocument, diags : Diagnostic[], message : string){
+    const start = document.positionAt(node.startIndex);
+    const end = document.positionAt(node.endIndex > node.startIndex ? node.endIndex : node.startIndex + 1);
+    diags.push({
+        range: Range.create(start, end),
+        message,
+        severity: DiagnosticSeverity.Warning,
+        source: "tamarin"
+    });
 }
 
 
@@ -75,7 +77,7 @@ function get_child_grammar_type(node :Parser.SyntaxNode): string[]{
 
 /* Function used to perform checks on all reserved facts,
  checks if they are in the wright place and used with the correct arity */
-export function check_reserved_facts(node : Parser.SyntaxNode, editor : vscode.TextEditor, diags : vscode.Diagnostic[]): void{
+export function check_reserved_facts(node : Parser.SyntaxNode, editor : TextDocument, diags : Diagnostic[]): void{
     for(let child of node.children){
         if(child.grammarType === DeclarationType.LinearF ||child.grammarType === DeclarationType.PersistentF){
             const fact_name = getName(child.child(0), editor);
@@ -133,7 +135,7 @@ export function check_reserved_facts(node : Parser.SyntaxNode, editor : vscode.T
 /* Function used to check if all variables with the same name  in a rule have the same type,
 Also checks that if a variables is in the right side of a macro or equation it is also present in the left side  */
 //A optimiser peut être 
-function check_variables_type_is_consistent_inside_a_rule(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags:vscode.Diagnostic[]) : void{
+function check_variables_type_is_consistent_inside_a_rule(symbol_table : TamarinSymbolTable, editor: TextDocument, diags:Diagnostic[]) : void{
     for (let i = 0 ; i < symbol_table.getSymbols().length; i++){
         let current_symbol = symbol_table.getSymbol(i);
         if(current_symbol.declaration === DeclarationType.PRVariable || current_symbol.declaration === DeclarationType.CCLVariable || current_symbol.declaration === DeclarationType.ActionFVariable ){
@@ -193,7 +195,7 @@ function check_variables_type_is_consistent_inside_a_rule(symbol_table : Tamarin
 };
 
 /* Function used to check the speling of facts, also provides a quick fix for the wrong ones using leverstein distance */
-function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]): void{
+function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor:  TextDocument, diags: Diagnostic[]): void{
     const facts : TamarinSymbol["name"][]  = [];
     let count = 0;
     for( let i = 0 ; i < symbol_table.getSymbols().length; i++){
@@ -223,15 +225,16 @@ function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor: vscod
                         }
                         const distance = levenshteinDistance(name, name2);
                         if (distance < 3 && !facts.includes(current_symbol.name)) { // threshold value
-                            const diagnostic = build_warning_display(current_symbol.node, editor, diags, "Warning: did you mean " + name2 + " ? (" + distance + " characters away)")
-                            diagnostic.code = "wrongFactName";
-                            const range = current_symbol.name_range;
-                            const fix = new vscode.CodeAction("Replace with " + name2, vscode.CodeActionKind.QuickFix);
-                            fix.edit = new vscode.WorkspaceEdit();
-                            fix.edit.replace(editor.document.uri, range, name2);
-                            fix.diagnostics = [diagnostic];
-                            fix.isPreferred = true;
-                            fixMap.set(diagnostic, fix);
+                            const start = editor.positionAt(current_symbol.node.startIndex);
+                            const end = editor.positionAt(current_symbol.node.endIndex > current_symbol.node.startIndex ? current_symbol.node.endIndex : current_symbol.node.startIndex + 1);
+                            const diagnostic: Diagnostic = {
+                                range: Range.create(start, end),
+                                message: "Warning: did you mean " + name2 + " ? (" + distance + " characters away)",
+                                severity: DiagnosticSeverity.Warning,
+                                source: "tamarin",
+                                code: "wrongFactName"
+                            };
+                            diags.push(diagnostic);
                             count ++
                         }
                     }
@@ -246,7 +249,7 @@ function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor: vscod
 
 /* Function used to check if a variable present in an action fact or conclusion is also present in premise,
 also checks if a fact in premise appears in a conclusion somewhere else */ 
-function check_variable_is_defined_in_premise(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]):void{
+function check_variable_is_defined_in_premise(symbol_table : TamarinSymbolTable, editor: TextDocument, diags: Diagnostic[]):void{
     for( let i = 0 ; i < symbol_table.getSymbols().length; i++){
         let current_symbol = symbol_table.getSymbol(i);
         if(current_symbol.type === '$'){continue};  // Do not take into account public variables
@@ -288,7 +291,7 @@ function check_variable_is_defined_in_premise(symbol_table : TamarinSymbolTable,
 }
 
 /* This function performs various checks on action facts : wether they are declared ord not and if the arity is correct */ 
-function check_action_fact(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
+function check_action_fact(symbol_table : TamarinSymbolTable, editor: TextDocument, diags: Diagnostic[]){
     let actionFacts: TamarinSymbol[] = [];
     let errors : string[] = []
     for( let i = 0 ; i < symbol_table.getSymbols().length; i++){
@@ -329,7 +332,7 @@ function check_action_fact(symbol_table : TamarinSymbolTable, editor: vscode.Tex
 /* Function to check macros, functions, facts arity and to provide
  quick fixes for wrong function name still using leverstein distance */
 
-function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
+function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable, editor: TextDocument, diags: Diagnostic[]){
     let known_functions : TamarinSymbol[] = [];
     let errors : string[] = []
     function getNames(list : TamarinSymbol[]): string[]{
@@ -397,26 +400,24 @@ function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable
                     if (typeof symbol.name === 'string' && typeof functionSymbol.name === 'string'&& symbol.name !== functionSymbol.name && symbol.arity === functionSymbol.arity ) {
                         const distance = levenshteinDistance(symbol.name, functionSymbol.name);
                         if (distance < 3) { // threshold value
-                            const diagnostic = build_warning_display(symbol.node, editor, diags, "Warning: did you mean " + functionSymbol.name + " ? (" + distance + "characters away)");
-                            diagnostic.code = "wrongFunctionName";
-                            const range = symbol.name_range;
-                            const fix = new vscode.CodeAction("Replace with " + functionSymbol.name, vscode.CodeActionKind.QuickFix);
-                            fix.edit = new vscode.WorkspaceEdit();
-                            fix.edit.replace(editor.document.uri, range, functionSymbol.name);
-                            fix.diagnostics = [diagnostic];
-                            fix.isPreferred = true;
-                            fixMap.set(diagnostic, fix);
+                            const diagnostic: Diagnostic = {
+                                range: symbol.name_range,
+                                message: "Warning: did you mean " + functionSymbol.name + " ? (" + distance + " characters away)",
+                                severity: DiagnosticSeverity.Warning,
+                                source: "tamarin",
+                                code: "wrongFunctionName"
+                            };
+                            diags.push(diagnostic);
                         }
                     }
                 }
             }
-
         }
     }
 }    
 
 /* Function used to check if a term is associated to a quantified formula in a lemma */ 
-function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
+function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: TextDocument, diags: Diagnostic[]){
     let lemma_vars : TamarinSymbol[] = [];
     for (let symbol of symbol_table.getSymbols()){
         if(symbol.declaration === DeclarationType.LemmaVariable || symbol.declaration === DeclarationType.RestrictionVariable){
@@ -483,7 +484,7 @@ function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vsc
 }
 
 /* Function to check that a macro is not used in an equation */ 
-function check_macro_not_in_equation(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
+function check_macro_not_in_equation(symbol_table : TamarinSymbolTable, editor: TextDocument, diags: Diagnostic[]){
     for(let symbol of symbol_table.getSymbols()){
         if(symbol.declaration === DeclarationType.NARY){
             for ( let macros of symbol_table.getSymbols()){
@@ -528,19 +529,21 @@ function return_functions(symbol_table: TamarinSymbolTable): string[]{
 
 /* Function used to check if the use of * ^ or others symbol is allowed, if not provides a quick fix to include the right builtin,
 Also works with functions defined in builtins*/ 
-function check_infix_operators(symbol_table : TamarinSymbolTable, editor : vscode.TextEditor, diags : vscode.Diagnostic[], root : Parser.SyntaxNode){
+function check_infix_operators(symbol_table : TamarinSymbolTable, editor : TextDocument, diags : Diagnostic[], root : Parser.SyntaxNode){
 
     function display_infix_error(builtin: string, symbol: string, child: Parser.SyntaxNode): void {
         let current_builtins = return_builtins(symbol_table);
         let current_functions = return_functions(symbol_table)
         if (!get_builtins_name(current_builtins).includes(builtin) && !current_functions.includes(getName(child.child(0), editor))) {
-            const diagnostic = build_error_display(child, editor, diags, "Error : symbol " + symbol + " cannot be used without " + builtin + " builtin");
-            diagnostic.code = "missingBuiltin";
-            const fix = new vscode.CodeAction("Include builtin : " + builtin, vscode.CodeActionKind.QuickFix);
             if(current_builtins.length > 0){
-            const range = current_builtins[current_builtins.length - 1].name_range; 
-            fix.edit = new vscode.WorkspaceEdit();
-            fix.edit.insert(editor.document.uri, range.end, ", " + builtin); 
+            const diagnostic: Diagnostic = {
+                range: current_builtins[current_builtins.length - 1].name_range ,
+                message: "Error : symbol " + symbol + " cannot be used without " + builtin + " builtin",
+                severity: DiagnosticSeverity.Warning,
+                source: "tamarin",
+                code: "missingBuiltin"
+            };
+            diags.push(diagnostic);
             }
             else {
                 let theory = root ;
@@ -549,16 +552,11 @@ function check_infix_operators(symbol_table : TamarinSymbolTable, editor : vscod
                     theory = theory.parent
                 }
                 theory = theory.child(3) as Parser.SyntaxNode
-                const range = new vscode.Range(
-                    editor.document.positionAt(theory.startIndex),
-                    editor.document.positionAt(theory.endIndex)
+                const range = Range.create(
+                    editor.positionAt(theory.startIndex),
+                    editor.positionAt(theory.endIndex)
                 );
-                fix.edit = new vscode.WorkspaceEdit();
-                fix.edit.insert(editor.document.uri, range.end, "\nbuiltins :  " + builtin);
-            }
-            fix.diagnostics = [diagnostic];
-            fix.isPreferred = true;
-            fixMap.set(diagnostic, fix);     
+            }  
         }
       }
       
@@ -611,23 +609,8 @@ function check_infix_operators(symbol_table : TamarinSymbolTable, editor : vscod
 
 }
 
-const fixMap = new Map<vscode.Diagnostic, vscode.CodeAction>();
 
-// Register the code action provider usefull for the quick fixes 
-vscode.languages.registerCodeActionsProvider('tamarin', {
-  provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext, token: vscode.CancellationToken) {
-    const actions: vscode.CodeAction[] = [];
-    for (const diagnostic of context.diagnostics) {
-      const fix = fixMap.get(diagnostic);
-      if (fix) {
-        actions.push(fix);
-      }
-    }
-    return actions;
-  }
-});
-
-export function checks_with_table(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[], root : Parser.SyntaxNode){
+export function checks_with_table(symbol_table : TamarinSymbolTable, editor: TextDocument, diags: Diagnostic[], root : Parser.SyntaxNode){
     check_variables_type_is_consistent_inside_a_rule(symbol_table, editor, diags);
     check_variable_is_defined_in_premise(symbol_table, editor, diags);
     check_action_fact(symbol_table, editor, diags);
