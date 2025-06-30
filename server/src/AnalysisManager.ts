@@ -4,6 +4,7 @@ import { Diagnostic } from "vscode-languageserver-types";
 import path = require('path');
 import Parser =require( "web-tree-sitter");
 import { CreateSymbolTableResult ,createSymbolTable } from "./symbol_table/create_symbol_table";
+import { checks_with_table } from "./features/wellformedness_checks";
 
 export let symbolTables = new Map<string, CreateSymbolTableResult>();
 
@@ -11,11 +12,14 @@ export async function AnalyseDocument(document: TextDocument): Promise<Diagnosti
     const { tree, diagnostics: syntaxDiagnostics } = await detect_errors(document);
     const { symbolTable } = await createSymbolTable(tree, document);
     symbolTables.set(document.uri, { symbolTable });
+    const wellformednessDiagnostics = await checks_with_table(symbolTable, document, tree);
     console.log("Symbol table created for:", document.uri);
     console.log("Number of symbols found:", symbolTable.getSymbols().length);
     console.log("Symbol Table content:", symbolTable);
+    console.log("Wellformedness diagnostics:", wellformednessDiagnostics.length);
     const allDiagnostics = [
-        ...syntaxDiagnostics
+        ...syntaxDiagnostics,
+        ...wellformednessDiagnostics
     ];
     
     return allDiagnostics;

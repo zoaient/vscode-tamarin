@@ -7,26 +7,26 @@ import { Diagnostic , DiagnosticSeverity ,Range , Position} from 'vscode-languag
 
 
 
-function build_error_display(node : Parser.SyntaxNode, document: TextDocument, diags : Diagnostic[], message : string){
+function build_error_display(node : Parser.SyntaxNode, document: TextDocument, message : string): Diagnostic{
     const start = document.positionAt(node.startIndex);
     const end = document.positionAt(node.endIndex > node.startIndex ? node.endIndex : node.startIndex + 1);
-    diags.push({
+    return{
         range: Range.create(start, end),
         message,
         severity: DiagnosticSeverity.Error,
         source: "tamarin"
-    });
+    };
 }
 
-function build_warning_display(node : Parser.SyntaxNode, document: TextDocument, diags : Diagnostic[], message : string){
+function build_warning_display(node : Parser.SyntaxNode, document: TextDocument, message : string): Diagnostic{
     const start = document.positionAt(node.startIndex);
     const end = document.positionAt(node.endIndex > node.startIndex ? node.endIndex : node.startIndex + 1);
-    diags.push({
+    return {
         range: Range.create(start, end),
         message,
         severity: DiagnosticSeverity.Warning,
         source: "tamarin"
-    });
+    }
 }
 
 
@@ -77,40 +77,40 @@ function get_child_grammar_type(node :Parser.SyntaxNode): string[]{
 
 /* Function used to perform checks on all reserved facts,
  checks if they are in the wright place and used with the correct arity */
-export function check_reserved_facts(node : Parser.SyntaxNode, editor : TextDocument, diags : Diagnostic[]): void{
+export function check_reserved_facts(node : Parser.SyntaxNode, editor : TextDocument): void{
     for(let child of node.children){
         if(child.grammarType === DeclarationType.LinearF ||child.grammarType === DeclarationType.PersistentF){
             const fact_name = getName(child.child(0), editor);
             if(fact_name === ReservedFacts[0]){
                 if(node.grammarType === 'conclusion'){
-                    build_warning_display(child, editor, diags,  "Fr fact cannot be used in conclusion of a rule");
+                    build_warning_display(child, editor,  "Fr fact cannot be used in conclusion of a rule");
                 }
                 if( child.child(2)?.children && get_arity(child.child(2)?.children) !== 1){
-                    build_error_display(child, editor, diags, "Error: incorrect arity for Fr fact, only 1 argument expected")
+                    build_error_display(child, editor, "Error: incorrect arity for Fr fact, only 1 argument expected")
                 }
             }
             else if(fact_name === ReservedFacts[1]){
                 if(node.grammarType === 'conclusion'){
-                    build_warning_display(child, editor, diags,  "In fact cannot be used in conclusion of a rule");
+                    build_warning_display(child, editor,  "In fact cannot be used in conclusion of a rule");
                 }
                 if(child.child(2)?.children && get_arity(child.child(2)?.children) !== 1){
-                    build_error_display(child, editor, diags, "Error: incorrect arity for In fact, only 1 argument expected")
+                    build_error_display(child, editor, "Error: incorrect arity for In fact, only 1 argument expected")
                 }
             }
             else if(fact_name === ReservedFacts[2]){
                 if( node.grammarType === 'premise'){
-                    build_warning_display(child, editor, diags,  "Out fact cannot be used in premise of a rule");
+                    build_warning_display(child, editor,  "Out fact cannot be used in premise of a rule");
                 }
                 if(child.child(2)?.children && get_arity(child.child(2)?.children) !== 1){
-                    build_error_display(child, editor, diags, "Error: incorrect arity for Out fact, only 1 argument expected")
+                    build_error_display(child, editor, "Error: incorrect arity for Out fact, only 1 argument expected")
                 }
             }
             else if((fact_name === ReservedFacts[3] || fact_name === ReservedFacts[4] || fact_name === ReservedFacts[5]) && node.parent?.grammarType === 'simple_rule' ){
-                build_warning_display(child, editor, diags,  "You are not supposed to use KD KU or action K in a rule ");
+                build_warning_display(child, editor,  "You are not supposed to use KD KU or action K in a rule ");
             }
             else if( fact_name === ReservedFacts[6]){
                 if(get_arity(child.child(2)?.children) != 2){
-                    build_error_display(child, editor, diags, "Error : incorrect arity for diff fact, 2 arguments expected")
+                    build_error_display(child, editor, "Error : incorrect arity for diff fact, 2 arguments expected")
                 }
             }
         }
@@ -120,13 +120,13 @@ export function check_reserved_facts(node : Parser.SyntaxNode, editor : TextDocu
                 const fact_name = getName(fact_name_node, editor);
                 if(fact_name === ReservedFacts[6]){
                     if(node.grammarType === DeclarationType.Equation || node.grammarType === 'mset_term'){
-                        build_warning_display(child, editor, diags , "Warning  :  diff fact cannot be used in an equation")
+                        build_warning_display(child, editor , "Warning  :  diff fact cannot be used in an equation")
                     }
                 }
             }
         }
         else {
-            check_reserved_facts(child, editor, diags)
+            check_reserved_facts(child, editor)
         }
     }
     
@@ -135,7 +135,8 @@ export function check_reserved_facts(node : Parser.SyntaxNode, editor : TextDocu
 /* Function used to check if all variables with the same name  in a rule have the same type,
 Also checks that if a variables is in the right side of a macro or equation it is also present in the left side  */
 //A optimiser peut être 
-function check_variables_type_is_consistent_inside_a_rule(symbol_table : TamarinSymbolTable, editor: TextDocument, diags:Diagnostic[]) : void{
+function check_variables_type_is_consistent_inside_a_rule(symbol_table : TamarinSymbolTable, editor: TextDocument) : Diagnostic[]{
+    const diags : Diagnostic[] = [];
     for (let i = 0 ; i < symbol_table.getSymbols().length; i++){
         let current_symbol = symbol_table.getSymbol(i);
         if(current_symbol.declaration === DeclarationType.PRVariable || current_symbol.declaration === DeclarationType.CCLVariable || current_symbol.declaration === DeclarationType.ActionFVariable ){
@@ -146,7 +147,8 @@ function check_variables_type_is_consistent_inside_a_rule(symbol_table : Tamarin
                             continue;
                         }
                         else{
-                            build_error_display(current_symbol.node, editor, diags, "Error: inconsistent variables, variables with the same name in the same rule must have same types ");
+                            const newDiag =build_error_display(current_symbol.node, editor, "Error: inconsistent variables, variables with the same name in the same rule must have same types ");
+                            diags.push(newDiag);
                             break;
                         }
                     }
@@ -169,7 +171,8 @@ function check_variables_type_is_consistent_inside_a_rule(symbol_table : Tamarin
                 }
             }
             if (!isbreak){
-                build_error_display(current_symbol.node, editor, diags, "Error : this variable doesn't exist on the left side of the equation")
+                const newDiag=build_error_display(current_symbol.node, editor, "Error : this variable doesn't exist on the left side of the equation")
+                diags.push(newDiag);
             }
         }
         // Check about macro variables 
@@ -185,17 +188,20 @@ function check_variables_type_is_consistent_inside_a_rule(symbol_table : Tamarin
                 }
             }
             if (!isbreak){
-                build_error_display(current_symbol.node, editor, diags, "Error : this variable doesn't exist on the left side of the equation")
+                const newDiag=build_error_display(current_symbol.node, editor, "Error : this variable doesn't exist on the left side of the equation")
+                diags.push(newDiag);
             }
         }
         else{
             continue;
         }
     }
+    return diags;
 };
 
 /* Function used to check the speling of facts, also provides a quick fix for the wrong ones using leverstein distance */
-function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor:  TextDocument, diags: Diagnostic[]): void{
+function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor:  TextDocument): Diagnostic[]{
+    const diags: Diagnostic[] = [];
     const facts : TamarinSymbol["name"][]  = [];
     let count = 0;
     for( let i = 0 ; i < symbol_table.getSymbols().length; i++){
@@ -206,7 +212,8 @@ function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor:  Text
             if(name){
                 //Checks if fact name is correct -------
                 if(!(name.charCodeAt(0) >= 65  && name.charCodeAt(0) <= 90)){
-                    build_error_display(current_symbol.node, editor, diags, "Error: facts must start with an uppercase")
+                    const newDiag = build_error_display(current_symbol.node, editor, "Error: facts must start with an uppercase")
+                    diags.push(newDiag);
                 }
                 if((current_symbol.declaration === DeclarationType.ActionF && current_symbol.context?.grammarType === 'simple_rule')){
                     facts.push(current_symbol.name);
@@ -243,13 +250,15 @@ function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor:  Text
         }
         if(count > 0){break;}
     };
+    return diags
 };
 
 
 
 /* Function used to check if a variable present in an action fact or conclusion is also present in premise,
 also checks if a fact in premise appears in a conclusion somewhere else */ 
-function check_variable_is_defined_in_premise(symbol_table : TamarinSymbolTable, editor: TextDocument, diags: Diagnostic[]):void{
+function check_variable_is_defined_in_premise(symbol_table : TamarinSymbolTable, editor: TextDocument): Diagnostic[]{
+    const diags : Diagnostic[] = [];
     for( let i = 0 ; i < symbol_table.getSymbols().length; i++){
         let current_symbol = symbol_table.getSymbol(i);
         if(current_symbol.type === '$'){continue};  // Do not take into account public variables
@@ -270,7 +279,7 @@ function check_variable_is_defined_in_premise(symbol_table : TamarinSymbolTable,
                 }
             }
             if(!is_break){
-                build_error_display(current_symbol.node, editor, diags, "Error: this variable is used in the second part of the rule but doesn't appear in premise");
+                diags.push(build_error_display(current_symbol.node, editor, "Error: this variable is used in the second part of the rule but doesn't appear in premise"));
             }
         }
         else if ((current_symbol.declaration === DeclarationType.LinearF || current_symbol.declaration === DeclarationType.PersistentF) && current_symbol.node.parent?.grammarType === DeclarationType.Premise){
@@ -284,14 +293,16 @@ function check_variable_is_defined_in_premise(symbol_table : TamarinSymbolTable,
                 }
             }
             if(!isbreak){
-                build_error_display(current_symbol.node, editor, diags, "Error : fact occur in premise but never in any conclusion ")
+                diags.push(build_error_display(current_symbol.node, editor, "Error : fact occur in premise but never in any conclusion "))
             }
         }
     }
+    return diags
 }
 
 /* This function performs various checks on action facts : wether they are declared ord not and if the arity is correct */ 
-function check_action_fact(symbol_table : TamarinSymbolTable, editor: TextDocument, diags: Diagnostic[]){
+function check_action_fact(symbol_table : TamarinSymbolTable, editor: TextDocument): Diagnostic[]{
+    const diags : Diagnostic[] = [];
     let actionFacts: TamarinSymbol[] = [];
     let errors : string[] = []
     for( let i = 0 ; i < symbol_table.getSymbols().length; i++){
@@ -311,7 +322,7 @@ function check_action_fact(symbol_table : TamarinSymbolTable, editor: TextDocume
                 }
             }
             if(!found_one){
-                build_error_display(current_symbol.node, editor, diags, "Error: this action fact is never declared")
+                diags.push(build_error_display(current_symbol.node, editor, "Error: this action fact is never declared"))
             }
         }
         else if (current_symbol.declaration === DeclarationType.ActionF && current_symbol.context?.grammarType === 'simple_rule'){
@@ -324,15 +335,17 @@ function check_action_fact(symbol_table : TamarinSymbolTable, editor: TextDocume
     for(let symbol of symbol_table.getSymbols()){
         if(symbol.name)
         if(errors.includes(symbol.name)){
-            build_error_display(symbol.node, editor, diags, " Error : incoherent arity")
+            diags.push(build_error_display(symbol.node, editor, " Error : incoherent arity"))
         }
     }
+    return diags
 }
 
 /* Function to check macros, functions, facts arity and to provide
  quick fixes for wrong function name still using leverstein distance */
 
-function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable, editor: TextDocument, diags: Diagnostic[]){
+function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable, editor: TextDocument): Diagnostic[]{
+    const diags : Diagnostic[] = [];
     let known_functions : TamarinSymbol[] = [];
     let errors : string[] = []
     function getNames(list : TamarinSymbol[]): string[]{
@@ -357,7 +370,7 @@ function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable
                             }
                             else{
                                 if(current_symbol.declaration === DeclarationType.NARY){
-                                    build_error_display(current_symbol.node, editor, diags, "Error : incorrect arity for this function, "+ known_functions[k].arity + " arguments required")                                  
+                                    diags.push(build_error_display(current_symbol.node, editor, "Error : incorrect arity for this function, "+ known_functions[k].arity + " arguments required"))                                  
                                 }
                                 else if( current_symbol.declaration === DeclarationType.LinearF || current_symbol.declaration === DeclarationType.PersistentF){
                                     errors.push(current_symbol.name);                                    
@@ -382,7 +395,7 @@ function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable
     for(let symbol of symbol_table.getSymbols()){
         if(symbol.name)
         if(errors.includes(symbol.name)){
-            build_error_display(symbol.node, editor, diags, " Error : incoherent arity")
+            diags.push(build_error_display(symbol.node, editor, " Error : incoherent arity"))
         }
     }
     for(let symbol of known_functions){
@@ -395,7 +408,7 @@ function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable
                 }
             }
             if(!isbreak){
-                build_error_display(symbol.node, editor, diags, "Error : unknown function or macro");
+                diags.push(build_error_display(symbol.node, editor, "Error : unknown function or macro"));
                 for(let functionSymbol of known_functions){
                     if (typeof symbol.name === 'string' && typeof functionSymbol.name === 'string'&& symbol.name !== functionSymbol.name && symbol.arity === functionSymbol.arity ) {
                         const distance = levenshteinDistance(symbol.name, functionSymbol.name);
@@ -414,10 +427,12 @@ function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable
             }
         }
     }
+    return diags
 }    
 
 /* Function used to check if a term is associated to a quantified formula in a lemma */ 
-function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: TextDocument, diags: Diagnostic[]){
+function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: TextDocument): Diagnostic[]{
+    const diags : Diagnostic[] = [];
     let lemma_vars : TamarinSymbol[] = [];
     for (let symbol of symbol_table.getSymbols()){
         if(symbol.declaration === DeclarationType.LemmaVariable || symbol.declaration === DeclarationType.RestrictionVariable){
@@ -478,22 +493,25 @@ function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: Tex
             }
         }
         if(!globalisbreak){
-            build_warning_display(lemma_vars[i].node, editor, diags, "Warning : free term in lemma or restriction formula")
+            diags.push(build_warning_display(lemma_vars[i].node, editor, "Warning : free term in lemma or restriction formula"))
         }
     }
+    return diags;
 }
 
 /* Function to check that a macro is not used in an equation */ 
-function check_macro_not_in_equation(symbol_table : TamarinSymbolTable, editor: TextDocument, diags: Diagnostic[]){
+function check_macro_not_in_equation(symbol_table : TamarinSymbolTable, editor: TextDocument): Diagnostic[]{
+    const diags : Diagnostic[] = [];
     for(let symbol of symbol_table.getSymbols()){
         if(symbol.declaration === DeclarationType.NARY){
             for ( let macros of symbol_table.getSymbols()){
                 if(macros.declaration === DeclarationType.Macro && macros.name === symbol.name && symbol.context.grammarType === DeclarationType.Equation){
-                    build_error_display(symbol.node, editor, diags, "Error : a macro shoud not be used in an equation ")
+                    diags.push(build_error_display(symbol.node, editor, "Error : a macro shoud not be used in an equation "))
                 }
             }
         }
     }
+    return diags
 }
 
 /* Given a symbol table returns all the builtins present in it */ 
@@ -529,8 +547,8 @@ function return_functions(symbol_table: TamarinSymbolTable): string[]{
 
 /* Function used to check if the use of * ^ or others symbol is allowed, if not provides a quick fix to include the right builtin,
 Also works with functions defined in builtins*/ 
-function check_infix_operators(symbol_table : TamarinSymbolTable, editor : TextDocument, diags : Diagnostic[], root : Parser.SyntaxNode){
-
+function check_infix_operators(symbol_table : TamarinSymbolTable, editor : TextDocument, root : Parser.SyntaxNode): Diagnostic[]{
+    const diags : Diagnostic[] = [];
     function display_infix_error(builtin: string, symbol: string, child: Parser.SyntaxNode): void {
         let current_builtins = return_builtins(symbol_table);
         let current_functions = return_functions(symbol_table)
@@ -603,23 +621,33 @@ function check_infix_operators(symbol_table : TamarinSymbolTable, editor : TextD
             }
             
         }
-        else (check_infix_operators(symbol_table,editor,diags,child));
+        else (check_infix_operators(symbol_table,editor,child));
     }
-
-
+    return diags;
 }
 
 
-export function checks_with_table(symbol_table : TamarinSymbolTable, editor: TextDocument, diags: Diagnostic[], root : Parser.SyntaxNode){
-    check_variables_type_is_consistent_inside_a_rule(symbol_table, editor, diags);
-    check_variable_is_defined_in_premise(symbol_table, editor, diags);
-    check_action_fact(symbol_table, editor, diags);
-    check_function_macros_and_facts_arity(symbol_table, editor, diags);
-    //checkArityProblems(symbol_table,editor,diags);
-    check_free_term_in_lemma(symbol_table, editor, diags);
-    check_macro_not_in_equation(symbol_table, editor, diags)
-    check_infix_operators(symbol_table, editor, diags, root);
-    check_case_sensitivity(symbol_table, editor, diags);
+export function checks_with_table(symbol_table : TamarinSymbolTable, document: TextDocument, root : Parser.SyntaxNode): Diagnostic[]{
+    const typeErrors = check_variables_type_is_consistent_inside_a_rule(symbol_table, document);
+    const premiseErrors = check_variable_is_defined_in_premise(symbol_table, document);
+    const actionFactErrors = check_action_fact(symbol_table, document);
+    const arityErrors = check_function_macros_and_facts_arity(symbol_table, document);
+    const freeTermWarnings = check_free_term_in_lemma(symbol_table, document);
+    const macroInEquationErrors = check_macro_not_in_equation(symbol_table, document);
+    const infixOperatorErrors = check_infix_operators(symbol_table, document, root);
+    const spellingWarnings = check_case_sensitivity(symbol_table, document);
+    const allDiagnostics = [
+        ...typeErrors,
+        ...premiseErrors,
+        ...actionFactErrors,
+        ...arityErrors,
+        ...freeTermWarnings,
+        ...macroInEquationErrors,
+        ...infixOperatorErrors,
+        ...spellingWarnings
+    ];
+
+    return allDiagnostics;
 };
 
 

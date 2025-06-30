@@ -17,10 +17,8 @@ export const createSymbolTable = async (root : Parser.SyntaxNode, document: Text
     let diags: Diagnostic[] = []; 
     const symbolTableVisitor = new SymbolTableVisitor();
     const symbolTable =  await  symbolTableVisitor.visit(root, document, diags);
-
     symbolTable.setRootNodedocumentDiags(root, document, diags);
     convert_linear_facts(symbolTable);
-    checks_with_table(symbolTable, document, diags, root);
     return {symbolTable};
 };
 
@@ -277,7 +275,7 @@ class SymbolTableVisitor{
             }
             else if (child?.grammarType === DeclarationType.Rule && root.grammarType === 'simple_rule' && root.parent !== null && child?.nextSibling){
                 this.registerident(root, DeclarationType.Rule, getName(child.nextSibling, document), root.parent, get_range(child.nextSibling))
-                check_reserved_facts(root, document, diags);
+                check_reserved_facts(root, document);
             }
             else if (child?.grammarType === DeclarationType.QF){
                continue;
@@ -326,7 +324,7 @@ class SymbolTableVisitor{
                         }
                     }
                     else if (grandchild.grammarType === DeclarationType.Equation){ 
-                        check_reserved_facts(grandchild, document, diags)
+                        check_reserved_facts(grandchild, document)
                         this.register_facts_searched(grandchild, document, grandchild, DeclarationType.NARY);   
                         let eqcount = 0  ;                
                         for(let ggchild of grandchild.children){
