@@ -648,4 +648,21 @@ export class TamarinSymbolTable{
         this.symbols.unshift(symbol);
     }
 
+    public findSymbolByName(name: string): TamarinSymbol | undefined {
+        const primaryDeclarations = [
+            DeclarationType.Functions, 
+            DeclarationType.Rule, 
+            DeclarationType.Lemma, 
+            DeclarationType.Restriction, 
+            DeclarationType.Macro
+        ];
+        let symbol = this.symbols.find(s => 
+            s.name === name && primaryDeclarations.includes(s.declaration)
+        );
+        if (symbol) {
+            return symbol;
+        }
+        return this.symbols.find(s => s.name === name);
+    }
+
 };

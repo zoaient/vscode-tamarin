@@ -6,11 +6,12 @@ import {
     TextDocuments, 
     InitializeParams,
     ServerCapabilities,
-    TextDocumentSyncKind 
+    TextDocumentSyncKind,
+    Definition,
+    DefinitionParams, 
 } from 'vscode-languageserver/node';
 
 import { AnalysisManager } from './AnalysisManager';
-import { parse } from 'path';
 
 
 console.error('[Server] Tamarin Language Server starting...');
@@ -44,6 +45,26 @@ documents.onDidChangeContent(async (change) => {
     connection.sendDiagnostics({ uri: change.document.uri, diagnostics });
     console.error(`[Server] Diagnostics sent for ${change.document.uri}.`);
 });
+
+connection.onDefinition((params: DefinitionParams)=> {
+    if (!analysisManager) return null;
+    console.error(`[Server] Received 'onDefinition' request for ${params.textDocument.uri}.`);
+    const document = documents.get(params.textDocument.uri);
+    if (!document) {
+        console.error(`[Server] Document not found: ${params.textDocument.uri}`);
+        return null;
+    }
+    return analysisManager.getDefinition(document, params.position);
+    }
+);
+
+documents.onDidClose(event => {
+    console.error(`[Server] Document closed: ${event.document.uri}. Cleaning up state.`);
+    if (analysisManager) {
+        analysisManager.handleDocumentClose(event.document.uri);
+    }
+});
+
 
 
 documents.listen(connection);

@@ -1,6 +1,6 @@
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { detect_errors } from "./features/syntax_errors";   
-import { Diagnostic } from "vscode-languageserver-types";
+import { Diagnostic ,Position, Location} from "vscode-languageserver-types";
 import path = require('path');
 import Parser =require( "web-tree-sitter");
 import { CreateSymbolTableResult ,TamarinSymbol,TamarinSymbolTable,createSymbolTable } from "./symbol_table/create_symbol_table";
@@ -52,6 +52,43 @@ export class AnalysisManager{
         
         return allDiagnostics;
     }
+    //goto
+    public getDefinition(document: TextDocument, position: Position): Location | null {
+        if(!this.parser) {
+            throw new Error("Parser not initialized");
+            return null;
+        }
+        const table = this.symbolTable.get(document.uri);
+        if (!table) {
+            console.error(`No symbol table found for document: ${document.uri}`);
+            return null;
+        }
+        const tree= this.parser.parse(document.getText());
+        const point = {row: position.line, column: position.character};
+        const nodeAtcursor = tree.rootNode.descendantForPosition(point);
+        if (!nodeAtcursor) {
+            console.error(`No node found at position: ${point.row}, ${point.column}`);
+            return null;
+        }
+        const symbolName = nodeAtcursor.text;
+        console.error('[Server] Looking for symbol "${symbolName}" in symbol table.');
+        const symbol = table.getSymbols().find(sym => sym.name === symbolName);
+        if (symbol && symbol.name_range) {
+            console.error(`[Server] getDefinition: Found symbol definition for "${symbol.name}".`);
+            const location: Location = {
+                uri: document.uri,
+                range: symbol.name_range
 
+            };
+            return location
+        }
+        console.error(`[Server] getDefinition: Symbol "${symbolName}" not found in symbol table.`);
+        return null;
 
+    }
+
+    public handleDocumentClose(uri: string): void {
+        console.log(`Document closed: ${uri}. Cleaning up symbol table.`);
+        this.symbolTable.delete(uri);
+    }
 }
