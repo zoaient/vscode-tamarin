@@ -1,4 +1,5 @@
 // @ts-nocheck
+// needs to be replaced with a proper lsp server usage
 import * as vscode from 'vscode'
 import { symbolTables } from './syntax_errors';
 import { CreateSymbolTableResult, DeclarationType, TamarinSymbol, TamarinSymbolTable } from '../symbol_table/create_symbol_table';

@@ -1,13 +1,6 @@
-import path = require('path');
 import Parser =require( "web-tree-sitter");
-//import { CreateSymbolTableResult, createSymbolTable } from '../symbol_table/create_symbol_table';
 import { Diagnostic , DiagnosticSeverity ,Range , Position} from 'vscode-languageserver';
 import { TextDocument } from "vscode-languageserver-textdocument";
-
-
-
-//export let symbolTables = new Map<string, CreateSymbolTableResult>();
-
 
 //given an node returns his index in his father's children list 
 function get_child_index(node : Parser.SyntaxNode): number|null{
@@ -23,7 +16,6 @@ function get_child_index(node : Parser.SyntaxNode): number|null{
     return 0;
 
 }
-
 // Get the text corresponding to a node range 
 export function getName(node : Parser.SyntaxNode| null, document: TextDocument): string {
     if (node && node.isNamed) {
@@ -37,17 +29,11 @@ export function getName(node : Parser.SyntaxNode| null, document: TextDocument):
 }
 
 
-
-
-
 /* Function used to detect syntax errors sent by the parser with MISSING or ERROR nodes,
 I tried to personnalize error messages according to the different cases
 I did the most common ones*/
 export async function detect_errors(tree:Parser.SyntaxNode,document: TextDocument): Promise<{diagnostics: Diagnostic[] }> {
     let diags: Diagnostic[] = [];
-    let text = document.getText();
-
-    
     function build_error_display(node: Parser.SyntaxNode, message: string) {
         const start = document.positionAt(node.startIndex);
         const end = document.positionAt(node.endIndex > node.startIndex ? node.endIndex : node.startIndex + 1);
@@ -96,8 +82,6 @@ export async function detect_errors(tree:Parser.SyntaxNode,document: TextDocumen
         if (pos.line === range.end.line && pos.character > range.end.character) return false;
     return true;
 }
- 
-    // PLace where missing and error nodes are detected, then builds the error
     function findMatches(node : Parser.SyntaxNode) {
         if ((node.isMissing)) {
             let myId = get_child_index(node);
@@ -138,11 +122,8 @@ export async function detect_errors(tree:Parser.SyntaxNode,document: TextDocumen
             else {
                 typesOfError(node);
             }
-
-            //diagnostics.set(document.uri, diags);
             return;
         }
-        // This is used to send a warning if there is code after end node 
         else if (node.grammarType === 'end'){
         const endPosition = document.positionAt(node.endIndex);
         const endOfDocumentPosition = document.positionAt(document.getText().length);
@@ -152,7 +133,6 @@ export async function detect_errors(tree:Parser.SyntaxNode,document: TextDocumen
         let inMultiLineComment = false;
         for (let lineNum = endPosition.line + 1; lineNum <= endOfDocumentPosition.line; lineNum++) {
             const line = text.split('\n')[lineNum];
-            // Check if the line is not empty and is not a comment
             if (!inMultiLineComment) {
                 if (line.trim().startsWith('/*')) {
                     inMultiLineComment = true;
@@ -166,7 +146,6 @@ export async function detect_errors(tree:Parser.SyntaxNode,document: TextDocumen
                 }
             }
         }
-        
         if (hasContentAfterEnd) {
             const message = "Code unreachable";
             const severity = DiagnosticSeverity.Warning;
@@ -177,65 +156,12 @@ export async function detect_errors(tree:Parser.SyntaxNode,document: TextDocumen
                 source: "tamarin"
             });
         } 
-
         }
-
         // Iterate over all the AST
         for (let child of node.children) {
             findMatches(child);
         }
-        
     }
-
     findMatches(tree);
-
-    //diagnostics.set(document.uri, diags);
-
     return {diagnostics: diags };
-    
 }
-
-
-/* Main function everytime the document changes create a corresponding symbol table and seex syntax errors, could be improved 
-export function display_syntax_errors(context: string):Diagnostic[] {
-
-    const changed_content = vscode.workspace.onDidChangeTextDocument((event) => {
-    
-        vscode.window.visibleTextEditors.forEach(async (editor) => {
-            if (editor.document.languageId !== 'tamarin') {
-               return;
-            }
-            if (editor.document === event.document) {
-                const tree = await detect_errors(editor,diagnostics);
-                if (tree) {
-                    const table = createSymbolTable(tree, editor);
-                    const fileName = editor.document.uri.path.split('/').pop(); 
-                    if (!fileName) {
-                        throw new Error('Could not determine file name');
-                    }  
-                    symbolTables.set(fileName, await table);
-                }
-            }
-        });
-    });
-
-    vscode.window.visibleTextEditors.forEach(async (editor) => {
-        const tree = await detect_errors(editor);
-        if (tree) {
-            const table = createSymbolTable(tree, editor);
-            const fileName = editor.document.uri.path.split('/').pop();           
-            if (!fileName) {
-                throw new Error('Could not determine file name');
-            }  
-            symbolTables.set(fileName, await table);  
-        }
-    });
-
-
-    context.subscriptions.push(changed_content);  
-}
-
-*/
-
-
-

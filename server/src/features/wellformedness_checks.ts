@@ -358,7 +358,6 @@ function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable
         }
         return str_list;
     }
-
     for( let i = 0; i < symbol_table.getSymbols().length; i++){
         let current_symbol = symbol_table.getSymbol(i);
         if(symbol_table.getSymbol(i).declaration === DeclarationType.LinearF || symbol_table.getSymbol(i).declaration === DeclarationType.PersistentF || symbol_table.getSymbol(i).declaration === DeclarationType.Functions || symbol_table.getSymbol(i).declaration === DeclarationType.NARY || symbol_table.getSymbol(i).declaration === DeclarationType.Macro){
@@ -578,7 +577,6 @@ function check_infix_operators(symbol_table : TamarinSymbolTable, editor : TextD
             }  
         }
       }
-      
     for (let child of root.children){
         if(child.grammarType === '^' || child.grammarType === '*'){
             let current_builtins = return_builtins(symbol_table);
@@ -620,7 +618,6 @@ function check_infix_operators(symbol_table : TamarinSymbolTable, editor : TextD
             else if (getName(child.child(0),editor) === 'XOR'){
                 display_infix_error('xor', 'XOR', child);  
             }
-            
         }
         else (check_infix_operators(symbol_table,editor,child));
     }
@@ -647,7 +644,6 @@ export function checks_with_table(symbol_table : TamarinSymbolTable, document: T
         ...infixOperatorErrors,
         ...spellingWarnings
     ];
-
     return allDiagnostics;
 };
 

@@ -7,7 +7,6 @@ import {
     InitializeParams,
     ServerCapabilities,
     TextDocumentSyncKind,
-    Definition,
     DefinitionParams, 
 } from 'vscode-languageserver/node';
 
