@@ -43,15 +43,9 @@ export function getName(node : Parser.SyntaxNode| null, document: TextDocument):
 /* Function used to detect syntax errors sent by the parser with MISSING or ERROR nodes,
 I tried to personnalize error messages according to the different cases
 I did the most common ones*/
-export async function detect_errors(document: TextDocument): Promise<{ tree: Parser.SyntaxNode, diagnostics: Diagnostic[] }> {
-    await Parser.init();
-    const parser = new Parser();
-    const parserPath = path.join(__dirname, '..', 'grammar', 'tree-sitter-tamarin', 'tree-sitter-spthy.wasm'); //Charge la grammaire tree-sitter pour parser
-    const Tamarin =  await Parser.Language.load(parserPath);
-    parser.setLanguage(Tamarin);
+export async function detect_errors(tree:Parser.SyntaxNode,document: TextDocument): Promise<{diagnostics: Diagnostic[] }> {
     let diags: Diagnostic[] = [];
     let text = document.getText();
-    const tree =  parser.parse(text);
 
     
     function build_error_display(node: Parser.SyntaxNode, message: string) {
@@ -193,11 +187,11 @@ export async function detect_errors(document: TextDocument): Promise<{ tree: Par
         
     }
 
-    findMatches(tree.rootNode);
+    findMatches(tree);
 
     //diagnostics.set(document.uri, diags);
 
-    return { tree: tree.rootNode, diagnostics: diags };
+    return {diagnostics: diags };
     
 }
 

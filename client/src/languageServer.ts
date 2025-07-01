@@ -14,9 +14,15 @@ export const startLanguageServer= async(context: ExtensionContext) =>{
 		run: { module: serverModule, transport: TransportKind.ipc },
 		debug: { module: serverModule, transport: TransportKind.ipc }
 	};
+    const parserPath = context.asAbsolutePath(
+        path.join('server', 'out', 'grammar', 'tree-sitter-tamarin', 'tree-sitter-spthy.wasm')
+    );
     const clientOptions: LanguageClientOptions = {
         documentSelector: [{scheme: 'file', language: 'tamarin'}],
-        outputChannelName: 'Tamarin Language Server'
+        outputChannelName: 'Tamarin Language Server',
+        initializationOptions: {
+            parserPath: parserPath
+        }
     }
     client = new LanguageClient(
         'tamarinLanguageServer',
