@@ -1,4 +1,3 @@
-
 import Parser = require("web-tree-sitter");
 import { ReservedFacts, DeclarationType, TamarinSymbolTable, TamarinSymbol, get_arity, set_associated_qf } from '../symbol_table/create_symbol_table';
 import { getName } from './syntax_errors';
@@ -77,40 +76,41 @@ function get_child_grammar_type(node :Parser.SyntaxNode): string[]{
 
 /* Function used to perform checks on all reserved facts,
  checks if they are in the wright place and used with the correct arity */
-export function check_reserved_facts(node : Parser.SyntaxNode, editor : TextDocument): void{
+export function check_reserved_facts(node : Parser.SyntaxNode, editor : TextDocument): Diagnostic[] {
+    const diags: Diagnostic[] = [];
     for(let child of node.children){
         if(child.grammarType === DeclarationType.LinearF ||child.grammarType === DeclarationType.PersistentF){
             const fact_name = getName(child.child(0), editor);
             if(fact_name === ReservedFacts[0]){
                 if(node.grammarType === 'conclusion'){
-                    build_warning_display(child, editor,  "Fr fact cannot be used in conclusion of a rule");
+                    diags.push(build_warning_display(child, editor,  "Fr fact cannot be used in conclusion of a rule"));
                 }
                 if( child.child(2)?.children && get_arity(child.child(2)?.children) !== 1){
-                    build_error_display(child, editor, "Error: incorrect arity for Fr fact, only 1 argument expected")
+                    diags.push(build_error_display(child, editor, "Error: incorrect arity for Fr fact, only 1 argument expected"))
                 }
             }
             else if(fact_name === ReservedFacts[1]){
                 if(node.grammarType === 'conclusion'){
-                    build_warning_display(child, editor,  "In fact cannot be used in conclusion of a rule");
+                    diags.push(build_warning_display(child, editor,  "In fact cannot be used in conclusion of a rule"));
                 }
                 if(child.child(2)?.children && get_arity(child.child(2)?.children) !== 1){
-                    build_error_display(child, editor, "Error: incorrect arity for In fact, only 1 argument expected")
+                    diags.push(build_error_display(child, editor, "Error: incorrect arity for In fact, only 1 argument expected"))
                 }
             }
             else if(fact_name === ReservedFacts[2]){
                 if( node.grammarType === 'premise'){
-                    build_warning_display(child, editor,  "Out fact cannot be used in premise of a rule");
+                    diags.push(build_warning_display(child, editor,  "Out fact cannot be used in premise of a rule"));
                 }
                 if(child.child(2)?.children && get_arity(child.child(2)?.children) !== 1){
-                    build_error_display(child, editor, "Error: incorrect arity for Out fact, only 1 argument expected")
+                    diags.push(build_error_display(child, editor, "Error: incorrect arity for Out fact, only 1 argument expected"))
                 }
             }
             else if((fact_name === ReservedFacts[3] || fact_name === ReservedFacts[4] || fact_name === ReservedFacts[5]) && node.parent?.grammarType === 'simple_rule' ){
-                build_warning_display(child, editor,  "You are not supposed to use KD KU or action K in a rule ");
+                diags.push(build_warning_display(child, editor,  "You are not supposed to use KD KU or action K in a rule "));
             }
             else if( fact_name === ReservedFacts[6]){
                 if(get_arity(child.child(2)?.children) != 2){
-                    build_error_display(child, editor, "Error : incorrect arity for diff fact, 2 arguments expected")
+                    diags.push(build_error_display(child, editor, "Error : incorrect arity for diff fact, 2 arguments expected"))
                 }
             }
         }
@@ -120,15 +120,16 @@ export function check_reserved_facts(node : Parser.SyntaxNode, editor : TextDocu
                 const fact_name = getName(fact_name_node, editor);
                 if(fact_name === ReservedFacts[6]){
                     if(node.grammarType === DeclarationType.Equation || node.grammarType === 'mset_term'){
-                        build_warning_display(child, editor , "Warning  :  diff fact cannot be used in an equation")
+                        diags.push(build_warning_display(child, editor , "Warning  :  diff fact cannot be used in an equation"))
                     }
                 }
             }
         }
         else {
-            check_reserved_facts(child, editor)
+            diags.push(...check_reserved_facts(child, editor));
         }
     }
+    return diags;
     
 };
 
