@@ -8,6 +8,8 @@ import {
     ServerCapabilities,
     TextDocumentSyncKind,
     DefinitionParams, 
+    RenameParams,
+    WorkspaceEdit
 } from 'vscode-languageserver/node';
 
 import { AnalysisManager } from './AnalysisManager';
@@ -27,7 +29,8 @@ connection.onInitialize(async (params: InitializeParams) => {
     console.error('[Server] Received "initialize" request from client.');
     const capabilities: ServerCapabilities = {
         textDocumentSync: TextDocumentSyncKind.Full, 
-        definitionProvider: true
+        definitionProvider: true,
+        renameProvider: true,
     };
     console.error('[Server] Sending server capabilities back.');
     return { capabilities };
@@ -56,6 +59,20 @@ connection.onDefinition((params: DefinitionParams)=> {
     return analysisManager.getDefinition(document, params.position);
     }
 );
+
+connection.onRenameRequest(async (params: RenameParams): Promise<WorkspaceEdit | null> => {
+    if (!analysisManager){
+        return null;
+    }
+    console.error(`[Server] Received 'onRenameRequest' for ${params.textDocument.uri} at position ${params.position.line}:${params.position.character}.`);
+    const document = documents.get(params.textDocument.uri);
+    if (!document) {
+        console.error(`[Server] Document not found: ${params.textDocument.uri}`);
+        return null;
+    }
+    return analysisManager.handleRenameRequest(document, params.position, params.newName)
+});
+
 
 documents.onDidClose(event => {
     console.error(`[Server] Document closed: ${event.document.uri}. Cleaning up state.`);

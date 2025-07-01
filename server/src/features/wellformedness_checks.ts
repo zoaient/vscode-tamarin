@@ -4,7 +4,7 @@ import { getName } from './syntax_errors';
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Diagnostic , DiagnosticSeverity ,Range , Position} from 'vscode-languageserver';
 
-
+//TODO . REFACTORING
 
 function build_error_display(node : Parser.SyntaxNode, document: TextDocument, message : string): Diagnostic{
     const start = document.positionAt(node.startIndex);
