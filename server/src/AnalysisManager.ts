@@ -82,7 +82,6 @@ export class AnalysisManager{
         this.symbolTable.delete(uri);
     }
     //rename
-    //TODO fix rename logic ?
     public handleRenameRequest(document: TextDocument, position: Position, newName: string): WorkspaceEdit | null {
         const table = this.symbolTable.get(document.uri);
         if (!table) return null
@@ -107,7 +106,6 @@ export class AnalysisManager{
         console.error(`[Server] handleRenameRequest: Looking for symbol at position ${position.line}:${position.character}.`);
         console.error(`[Server] handleRenameRequest: Original symbol found: ${originalSymbol ? originalSymbol.name : 'none'}.`);
         if (!originalSymbol) return null;
-        
         const edits: TextEdit[] = [];
         const chosenSymbolName = originalSymbol.name;
         for (const symbol of table.getSymbols()) {
@@ -139,9 +137,7 @@ export class AnalysisManager{
             }
             console.error(shouldRename)
             if (shouldRename) {
-                console.error("ahhhhhhhh")
                 if (symbol.name_range) {
-                    console.error("ooooooooooh")
                     edits.push(TextEdit.replace(symbol.name_range, newName));
                 }
             }
