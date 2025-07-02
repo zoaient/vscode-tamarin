@@ -1,7 +1,9 @@
 import Parser =require( "web-tree-sitter");
 import { Diagnostic , DiagnosticSeverity ,Range , Position} from 'vscode-languageserver';
 import { TextDocument } from "vscode-languageserver-textdocument";
+import {build_error_display} from './checks/utils'
 
+// TODO , pattern matching ? 
 //given an node returns his index in his father's children list 
 function get_child_index(node : Parser.SyntaxNode): number|null{
     if(node.parent === null ){
@@ -16,63 +18,41 @@ function get_child_index(node : Parser.SyntaxNode): number|null{
     return 0;
 
 }
-// Get the text corresponding to a node range 
-export function getName(node : Parser.SyntaxNode| null, document: TextDocument): string {
-    if (node && node.isNamed) {
-        return document.getText(Range.create(
-            document.positionAt(node.startIndex),
-            document.positionAt(node.endIndex)
-        ));
-    } else {
-        return "None";
-    }
-}
-
 
 /* Function used to detect syntax errors sent by the parser with MISSING or ERROR nodes,
 I tried to personnalize error messages according to the different cases
 I did the most common ones*/
 export async function detect_errors(tree:Parser.SyntaxNode,document: TextDocument): Promise<{diagnostics: Diagnostic[] }> {
     let diags: Diagnostic[] = [];
-    function build_error_display(node: Parser.SyntaxNode, message: string) {
-        const start = document.positionAt(node.startIndex);
-        const end = document.positionAt(node.endIndex > node.startIndex ? node.endIndex : node.startIndex + 1);
-        diags.push({
-            range: Range.create(start, end),
-            message,
-            severity: DiagnosticSeverity.Error,
-            source: "tamarin"
-        });
-    }
+
     // This is where i tried to detect particular cases for syntax errors based on nodes position 
     function typesOfError(node : Parser.SyntaxNode){
         if(node.grammarType === 'theory' || node.nextSibling?.nextSibling?.grammarType === 'begin' || node.nextSibling?.grammarType === 'begin'){
-            build_error_display(node, "MISSING 'theory' or 'begin'")
-
+            diags.push(build_error_display(node, document,"MISSING 'theory' or 'begin'"))
         }
         else if(node.firstChild?.grammarType === "builtins" || node.firstChild?.grammarType === "functions" || node.firstChild?.grammarType === "macros" ){
-            build_error_display(node, "MISSING ':' ");
+            diags.push(build_error_display(node, document,"MISSING ':' "));
         }
         else if ( node.nextSibling?.grammarType === 'built_in'){
-            build_error_display(node, "MISSING ',' ");   
+            diags.push(build_error_display(node, document,"MISSING ',' "));   
         }
         else if(node.firstChild?.grammarType === "rule" && (node.firstChild.nextSibling?.grammarType != "ident" || node.firstChild.nextSibling?.nextSibling?.grammarType != ":") ){
-            build_error_display(node, "MISSING ':' or rule name ");
+            diags.push(build_error_display(node,document , "MISSING ':' or rule name "));
         }
         else if(node.firstChild?.grammarType === "lemma"){
-            build_error_display(node, "MISSING ':' or lemma name ");
+            diags.push(build_error_display(node,document, "MISSING ':' or lemma name "));
         }
         else if (node.firstChild?.grammarType === "premise" || (node.firstChild?.grammarType === "rule" && (node.firstChild.nextSibling?.grammarType === "ident" || node.firstChild.nextSibling?.nextSibling?.grammarType === ":"))){
-            build_error_display(node, "ERROR in rule structure the syntax for a rule is either \n []-->[] \n or \n []--[]->[]")
+            diags.push(build_error_display(node,document, "ERROR in rule structure the syntax for a rule is either \n []-->[] \n or \n []--[]->[]"))
         }
         else if(node.firstChild?.grammarType === "pre_defined"){
-            build_error_display(node, "MISSING generalized quantifier");
+            diags.push(build_error_display(node,document, "MISSING generalized quantifier"));
         }
         else if (node.firstChild?.grammarType === "nested_formula" || node.firstChild?.grammarType === "action_constraint" || node.firstChild?.grammarType === "conjunction"){
-            build_error_display(node, "EXPECTING '&', '∧', '|', '∨', '==>'");
+            diags.push(build_error_display(node,document, "EXPECTING '&', '∧', '|', '∨', '==>'"));
         }
         else {
-            build_error_display(node, node.toString().slice(1,-1));
+            diags.push(build_error_display(node,document, node.toString().slice(1,-1)));
         }
     }
 
@@ -109,7 +89,7 @@ export async function detect_errors(tree:Parser.SyntaxNode,document: TextDocumen
                 }
             }
             else {
-            build_error_display(node ,node.toString().slice(1,-1));
+            diags.push(build_error_display(node ,document,node.toString().slice(1,-1)));
             }
         }
         else if (node.isError){

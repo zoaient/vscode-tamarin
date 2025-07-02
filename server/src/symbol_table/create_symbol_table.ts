@@ -2,7 +2,7 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import Parser = require("web-tree-sitter");
 import { Range, Position } from 'vscode-languageserver/node';
 import { check_reserved_facts} from '../features/checks/checkReservedFacts';
-import {getName} from '../features/syntax_errors'
+import {getName} from '../features/checks/utils'
 import { Diagnostic } from "vscode-languageserver-types";
 import path = require('path');
 

@@ -36,6 +36,7 @@ export function getName(node : Parser.SyntaxNode| null, document: TextDocument):
     }
 }
 
+
 /* Function used to compare the distance between two strings,
  returns the minimum operations required to convert the first string into the second one */
 export function levenshteinDistance(s1: string , s2 : string): number {
