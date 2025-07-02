@@ -3,7 +3,7 @@ import { detect_errors } from "./features/syntax_errors";
 import { Diagnostic ,Position, Location,WorkspaceEdit,TextEdit} from "vscode-languageserver-types";
 import Parser =require( "web-tree-sitter");
 import {TamarinSymbolTable,createSymbolTable,DeclarationType } from "./symbol_table/create_symbol_table";
-import { checks_with_table } from "./features/wellformedness_checks";
+import { checks_with_table } from "./features/checks/index";
 //TODO : REFACTORING
 export class AnalysisManager{
     private parser: Parser|undefined;
@@ -33,7 +33,6 @@ export class AnalysisManager{
         const wellformednessDiagnostics = await checks_with_table(symbolTable, document, tree.rootNode);
         console.log("Symbol table created for:", document.uri);
         console.log("Number of symbols found:", symbolTable.getSymbols().length);
-        console.log("Symbol Table content:", symbolTable);
         console.log("Wellformedness diagnostics:", wellformednessDiagnostics.length);
         const allDiagnostics = [
             ...syntaxDiagnostics,

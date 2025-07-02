@@ -1,0 +1,21 @@
+import {build_error_display} from './utils';
+import {DeclarationType, TamarinSymbolTable} from '../../symbol_table/create_symbol_table';
+import { TextDocument } from "vscode-languageserver-textdocument";
+import { Diagnostic} from 'vscode-languageserver';
+
+
+
+/* Function to check that a macro is not used in an equation */ 
+export function check_macro_not_in_equation(symbol_table : TamarinSymbolTable, editor: TextDocument): Diagnostic[]{
+    const diags : Diagnostic[] = [];
+    for(let symbol of symbol_table.getSymbols()){
+        if(symbol.declaration === DeclarationType.NARY){
+            for ( let macros of symbol_table.getSymbols()){
+                if(macros.declaration === DeclarationType.Macro && macros.name === symbol.name && symbol.context.grammarType === DeclarationType.Equation){
+                    diags.push(build_error_display(symbol.node, editor, "Error : a macro shoud not be used in an equation "))
+                }
+            }
+        }
+    }
+    return diags
+}
