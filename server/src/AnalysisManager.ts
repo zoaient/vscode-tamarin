@@ -96,16 +96,22 @@ export class AnalysisManager{
             console.error(`No node found at position: ${point.row}, ${point.column}`);
             return null;
         }
-        const originalSymbol = table.getSymbols().find(
-            sym => sym.name_range &&
-            sym.name_range.start.line === position.line && 
-            sym.name_range.start.character === position.character
+        const oldname= tree.rootNode.namedDescendantForPosition(point).text;
+        console.error(oldname);
+        const originalSymbol = table.getSymbols().find(symbol => 
+            symbol.name === oldname && 
+            symbol.name_range && 
+            symbol.name_range.start.line === position.line && 
+            symbol.name_range.start.character === position.character
         );
-        
+        console.error(`[Server] handleRenameRequest: Looking for symbol at position ${position.line}:${position.character}.`);
+        console.error(`[Server] handleRenameRequest: Original symbol found: ${originalSymbol ? originalSymbol.name : 'none'}.`);
         if (!originalSymbol) return null;
+        
         const edits: TextEdit[] = [];
         const chosenSymbolName = originalSymbol.name;
         for (const symbol of table.getSymbols()) {
+            console.error(symbol.name)
             let shouldRename=false;
             if (symbol.declaration === DeclarationType.PRVariable ||
                 symbol.declaration === DeclarationType.ActionFVariable ||
@@ -128,15 +134,19 @@ export class AnalysisManager{
                     shouldRename = true;
                 }
             }
-            else if (symbol.name === chosenSymbolName && symbol.declaration === originalSymbol.declaration) { {
+            else if (symbol.name === chosenSymbolName && symbol.declaration === originalSymbol.declaration) { 
                 shouldRename = true;
             }
+            console.error(shouldRename)
             if (shouldRename) {
+                console.error("ahhhhhhhh")
                 if (symbol.name_range) {
+                    console.error("ooooooooooh")
                     edits.push(TextEdit.replace(symbol.name_range, newName));
                 }
-            }}
+            }
         }
+        console.error(edits)
         if (edits.length === 0){
             return null;
         }
