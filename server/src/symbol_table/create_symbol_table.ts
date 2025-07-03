@@ -1,10 +1,12 @@
 import { TextDocument } from "vscode-languageserver-textdocument";
 import Parser = require("web-tree-sitter");
-import { Range, Position } from 'vscode-languageserver/node';
+import { Range} from 'vscode-languageserver/node';
 import { check_reserved_facts} from '../features/checks/checkReservedFacts';
 import {getName} from '../features/checks/utils'
 import { Diagnostic } from "vscode-languageserver-types";
-import path = require('path');
+import { ReservedFacts, ExistingBuiltIns , AssociatedFunctions} from "./tamarinConstants";
+import { DeclarationType, TamarinSymbol} from "./tamarinTypes";
+import { find_variables, find_narry , find_linear_fact,get_arity,get_macro_arity,get_range } from "./utils";
 
 export type CreateSymbolTableResult = {
     symbolTable: TamarinSymbolTable
@@ -33,208 +35,12 @@ function convert_linear_facts(ts : TamarinSymbolTable){
     }
 }
 
-/* Function used to find all variables given a  tree node it will search through all sons,
-used to find lemma or rule vars for example  */ 
-function find_variables(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
-    let vars : Parser.SyntaxNode[] = []
-    if( node.grammarType === DeclarationType.MVONF && node.parent?.grammarType === DeclarationType.Equation){
-        vars.push(node)
-        return vars
-    }
-       
-    for( let child of node.children){
-
-         //This is used to skip errors in proof methods modify it if you want to manage proof methods
-         if(child.grammarType === "proof_method"){
-            continue;
-        }
-
-        if(child.grammarType === 'pub_var' ||child.grammarType === 'fresh_var' || child.grammarType === DeclarationType.MVONF ||child.grammarType === 'nat_var'|| child.grammarType === 'temporal_var'){
-            vars.push(child)
-            vars = vars.concat(find_variables(child));
-        }
-        else{
-            vars = vars.concat(find_variables(child));
-        }
-    }  
-    return vars;  
-}
-
-/* Same as the above function but for facts or functions*/
-function find_linear_fact(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
-    let vars : Parser.SyntaxNode[] = []
-    for( let child of node.children){
-
-        //This is used to skip errors in proof methods modify it if you want to manage proof methods
-        if(child.grammarType === "proof_method"){
-            continue;
-        }
-        
-        if(child.grammarType === DeclarationType.LinearF || child.grammarType === DeclarationType.NARY || child.grammarType === DeclarationType.PersistentF){
-            vars.push(child)
-            vars = vars.concat(find_linear_fact(child));
-        }
-        else{
-            vars = vars.concat(find_linear_fact(child));
-        }
-    }  
-    return vars;  
-}
-
-function find_narry(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
-    let vars : Parser.SyntaxNode[] = []
-    for( let child of node.children){
-        if(child.grammarType === DeclarationType.NARY){
-            vars.push(child)
-            vars = vars.concat(find_linear_fact(child));
-        }
-        else{
-            vars = vars.concat(find_linear_fact(child));
-        }
-    }  
-    return vars;  
-}
-
-/* Given a function or fact node returns his arity*/
-export function get_arity(node : Parser.SyntaxNode[]|undefined): number{
-    let arity: number = 0;
-    if(node)
-    for (let arg of node){
-        if(arg.type !== ","){
-            arity ++;
-        }
-    } 
-    return arity;
-}
-
-/* Same as above but for macros */
-export function get_macro_arity(node : Parser.SyntaxNode[]|undefined): number{
-    let arity: number = -1;
-    if(node)
-    for (let arg of node){
-        if(arg.type === "="){
-            break
-        }
-        if(arg.type !== "," && arg.type !== "(" && arg.type !== ")" ){
-            arity ++;
-        }
-    } 
-    return arity;
-}
-export function get_range(node: Parser.SyntaxNode): Range {
-    const startPosition: Position = {
-        line: node.startPosition.row,
-        character: node.startPosition.column
-    };
-    
-    const endPosition: Position = {
-        line: node.endPosition.row,
-        character: node.endPosition.column
-    };
-
-    return { start: startPosition, end: endPosition };
-}
-
-//Function used to parse included files 
-export async function parseText(includedFileText : string):Promise<Parser.SyntaxNode>{
-    await Parser.init();
-    const parser = new Parser();
-    const parserPath = path.join(__dirname, '..', 'grammar', 'tree-sitter-tamarin', 'tree-sitter-spthy.wasm');
-    const Tamarin = await Parser.Language.load(parserPath);
-    parser.setLanguage(Tamarin);
-    const tree = parser.parse(includedFileText);
-    return tree.rootNode
-}
-
-// Contains every node types used to detect symbols.
-export enum DeclarationType{
-    CCLVariable = 'conclusion_variable',
-    PRVariable = 'premise_variable',
-    ActionFVariable = 'action_fact_variable',
-    LemmaVariable = 'lemma_variable',
-    LMacroVariable = 'left_macro_variable',
-    RMacroVariable = 'right_macro_variable',
-    LEquationVariable  = 'left_equation_variable',
-    REquationVariable  = 'right_equation_variable',
-    RestrictionVariable = 'restriction_variable',
-
-    Builtins = 'built_ins',
-    Functions = 'functions',
-    Macros = 'macros',
-    Equations = 'equations',
-    QF = 'quantified_formula',
-    NF = 'nested_formula',
-    Let  = 'let',
-    Rule_let_block = "rule_let_block",
-    ActionF = 'action_fact',
-    Conclusion = 'conclusion',
-    Premise = 'premise',
-
-
-    Lemma = 'lemma',
-    Restriction = 'restriction',
-    Rule = 'rule',
-    Theory = 'theory',
-    PubVar = 'pub_var',
-    MVONF = 'msg_var_or_nullary_fun',
-    TMPV = 'temporal_var',
-    FUNCP = 'function_pub',
-    FUNCPR = 'function_private',
-    FUNCD = 'function_destructor',
-    FUNCUST = 'function_custom',
-    Builtin = 'built_in',
-    LinearF = 'linear_fact',
-    PersistentF =  'persistent_fact', 
-    NARY = 'nary_app',
-    DEFAULT = 'default',
-    Macro = 'macro',
-    Equation = 'equation'
-};
 
 function convert(grammar_type : string) : DeclarationType{
     if(grammar_type === 'nary_app'){return DeclarationType.NARY}
     else if(grammar_type === 'linear_fact'){return DeclarationType.LinearF}
     else{return DeclarationType.DEFAULT};
 }
-
-export enum variable_types{
-    PUB = '$',
-    FRESH = '~',
-    NAT = '%',
-    TEMP = '#'
-}
-
-export const ReservedFacts: string[] = ['Fr','In','Out','KD','KU','K','diff'] ;
-
-//List of existing builtins add new ones if necessary
-const ExistingBuiltIns : string[] = 
-[
-    'diffie-hellman',
-    'hashing',
-    'symmetric-encryption',
-    'asymmetric-encryption',
-    'signing',
-    'revealing-signing',
-    'bilinear-pairing',
-    'xor',
-    'default',
-]
-
-//First the name and then the arity also mind the order above (inv and 1 are diffie-hellman functions etc …)
-const AssociatedFunctions: string[][] = 
-[
-['inv','1', '1', '0'],
-['h', '1'],
-['sdec', '2', 'senc', '2'],
-['aenc', '2', 'adec', '2', 'pk', '1'],
-['sign', '2', 'verify', '3', 'pk', '1', 'true', '0'],
-['revealSign', '2', 'revealVerify', '3', 'getMessage', '1', 'pk', '1', 'true', '0'],
-['pmult', '2', 'em', '2'],
-['XOR', '2', 'zero', '0'],
-['fst', '1', 'snd', '1', 'pair', '2']
-]
-
-
 
 class SymbolTableVisitor{
     constructor(
@@ -602,16 +408,7 @@ class SymbolTableVisitor{
 };
 
 
-export type TamarinSymbol = {
-    node : Parser.SyntaxNode
-    declaration : DeclarationType
-    context : Parser.SyntaxNode
-    name ?:  string 
-    name_range : Range
-    arity ?: number
-    type ?: string
-    associated_qf ?: Parser.SyntaxNode
-};
+
 
 export function set_associated_qf(symbol : TamarinSymbol, node : Parser.SyntaxNode |null):void {
     if(node){

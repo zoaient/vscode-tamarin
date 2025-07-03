@@ -1,8 +1,9 @@
 import Parser = require("web-tree-sitter");
-import { DeclarationType, TamarinSymbolTable, TamarinSymbol} from '../../symbol_table/create_symbol_table';
+import { TamarinSymbolTable} from '../../symbol_table/create_symbol_table';
 import { getName } from './utils';
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Diagnostic , DiagnosticSeverity ,Range} from 'vscode-languageserver';
+import { DeclarationType, TamarinSymbol} from "../../symbol_table/tamarinTypes";
 
 /* Given a symbol table returns all the builtins present in it */ 
 function return_builtins(symbol_table: TamarinSymbolTable): TamarinSymbol[]{

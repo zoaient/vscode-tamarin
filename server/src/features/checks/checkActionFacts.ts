@@ -1,7 +1,8 @@
 import { build_error_display} from './utils';
-import { DeclarationType, TamarinSymbolTable, TamarinSymbol} from '../../symbol_table/create_symbol_table';
+import { TamarinSymbolTable} from '../../symbol_table/create_symbol_table';
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Diagnostic} from 'vscode-languageserver';
+import { DeclarationType,TamarinSymbol} from "../../symbol_table/tamarinTypes";
 
 /* This function performs various checks on action facts : wether they are declared ord not and if the arity is correct */ 
 export function check_action_fact(symbol_table : TamarinSymbolTable, editor: TextDocument): Diagnostic[]{

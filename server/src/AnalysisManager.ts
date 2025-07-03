@@ -2,8 +2,9 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import { detect_errors } from "./features/syntax_errors";   
 import { Diagnostic ,Position, Location,WorkspaceEdit,TextEdit} from "vscode-languageserver-types";
 import Parser =require( "web-tree-sitter");
-import {TamarinSymbolTable,createSymbolTable,DeclarationType } from "./symbol_table/create_symbol_table";
+import {TamarinSymbolTable,createSymbolTable} from "./symbol_table/create_symbol_table";
 import { checks_with_table } from "./features/checks/index";
+import { DeclarationType} from "./symbol_table/tamarinTypes";
 //TODO : REFACTORING
 export class AnalysisManager{
     private parser: Parser|undefined;

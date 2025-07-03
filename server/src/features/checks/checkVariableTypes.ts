@@ -1,7 +1,8 @@
 import { build_error_display} from './utils';
-import { DeclarationType, TamarinSymbolTable} from '../../symbol_table/create_symbol_table';
+import { TamarinSymbolTable} from '../../symbol_table/create_symbol_table';
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Diagnostic} from 'vscode-languageserver';
+import { DeclarationType} from "../../symbol_table/tamarinTypes";
 
 /* Function used to check if all variables with the same name  in a rule have the same type,
 Also checks that if a variables is in the right side of a macro or equation it is also present in the left side  */

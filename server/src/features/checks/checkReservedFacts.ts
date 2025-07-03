@@ -1,8 +1,10 @@
 import Parser = require("web-tree-sitter");
-import { ReservedFacts, DeclarationType,get_arity} from '../../symbol_table/create_symbol_table';
+import { get_arity} from '../../symbol_table/utils';
 import { TextDocument  } from "vscode-languageserver-textdocument";
 import { Diagnostic} from 'vscode-languageserver';
 import { build_error_display, build_warning_display, getName } from './utils';
+import { ReservedFacts } from "../../symbol_table/tamarinConstants";
+import { DeclarationType} from "../../symbol_table/tamarinTypes";
 
 /* Function used to perform checks on all reserved facts,
  checks if they are in the wright place and used with the correct arity */

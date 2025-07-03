@@ -1,8 +1,8 @@
 import { build_error_display , levenshteinDistance } from './utils';
-import { DeclarationType, TamarinSymbolTable, TamarinSymbol} from '../../symbol_table/create_symbol_table';
+import { TamarinSymbolTable} from '../../symbol_table/create_symbol_table';
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Diagnostic , DiagnosticSeverity} from 'vscode-languageserver';
-
+import { DeclarationType, TamarinSymbol} from "../../symbol_table/tamarinTypes";
 /* Function to check macros, functions, facts arity and to provide
  quick fixes for wrong function name still using leverstein distance */
 

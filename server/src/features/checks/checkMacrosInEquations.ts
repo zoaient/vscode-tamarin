@@ -1,7 +1,8 @@
 import {build_error_display} from './utils';
-import {DeclarationType, TamarinSymbolTable} from '../../symbol_table/create_symbol_table';
+import { TamarinSymbolTable} from '../../symbol_table/create_symbol_table';
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Diagnostic} from 'vscode-languageserver';
+import { DeclarationType} from "../../symbol_table/tamarinTypes";
 
 
 

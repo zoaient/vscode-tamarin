@@ -1,7 +1,8 @@
 import { levenshteinDistance, build_error_display } from './utils';
-import {DeclarationType, TamarinSymbolTable, TamarinSymbol} from '../../symbol_table/create_symbol_table';
+import { TamarinSymbolTable} from '../../symbol_table/create_symbol_table';
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Diagnostic , DiagnosticSeverity ,Range} from 'vscode-languageserver';
+import { DeclarationType,TamarinSymbol} from "../../symbol_table/tamarinTypes";
 
 /* Function used to check the speling of facts, also provides a quick fix for the wrong ones using leverstein distance */
 export function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor:  TextDocument): Diagnostic[]{

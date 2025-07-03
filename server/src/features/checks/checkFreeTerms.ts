@@ -1,8 +1,9 @@
 import Parser = require("web-tree-sitter");
-import { DeclarationType, TamarinSymbolTable, TamarinSymbol, set_associated_qf } from '../../symbol_table/create_symbol_table';
+import { TamarinSymbolTable, set_associated_qf } from '../../symbol_table/create_symbol_table';
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Diagnostic } from 'vscode-languageserver';
 import { build_warning_display, get_child_grammar_type } from './utils';
+import { DeclarationType, TamarinSymbol} from "../../symbol_table/tamarinTypes";
 
 /* Function used to check if a term is associated to a quantified formula in a lemma */ 
 export function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: TextDocument): Diagnostic[]{

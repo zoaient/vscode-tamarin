@@ -1,7 +1,8 @@
 import { build_error_display} from './utils';
-import { DeclarationType, TamarinSymbolTable} from '../../symbol_table/create_symbol_table';
+import { TamarinSymbolTable} from '../../symbol_table/create_symbol_table';
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Diagnostic} from 'vscode-languageserver';
+import { DeclarationType} from "../../symbol_table/tamarinTypes";
 
 /* Function used to check if a variable present in an action fact or conclusion is also present in premise,
 also checks if a fact in premise appears in a conclusion somewhere else */ 
