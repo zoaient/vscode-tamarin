@@ -10,23 +10,31 @@ export function runShortcut(context : vscode.ExtensionContext){
   playButton.show();
   const showActions = vscode.commands.registerCommand('tamarin.showActions', async () => {
       const actions: vscode.QuickPickItem[] = [
-        { label: 'Run Tamarin Prover', description: 'Run Tamarin prover ' },
-        { label: 'Run Tamarin Prover  auto-sources', description: 'Run Tamarin prover with --auto-sources option'  },
+        { label: 'Run Tamarin Prover interactive'},
+        { label: 'Run Tamarin Prover interactive with auto-sources option'},
+        { label: 'Run Tamarin Prover'},
+        { label: 'Run Tamarin Prover with auto-sources option'}
       ];
 
       const selectedAction = await vscode.window.showQuickPick(actions, {
         placeHolder: 'Select an action',
       });
 
-      if (selectedAction && selectedAction.label === 'Run Tamarin Prover') {
-        vscode.commands.executeCommand('tamarin.play')
+      if (selectedAction && selectedAction.label === 'Run Tamarin Prover interactive') {
+        vscode.commands.executeCommand('tamarin.play_interactive')
       }
-      else if (selectedAction && selectedAction.label === 'Run Tamarin Prover  auto-sources'){
-          vscode.commands.executeCommand('tamarin.play2')
+      else if (selectedAction && selectedAction.label === 'Run Tamarin Prover interactive with auto-sources option'){
+        vscode.commands.executeCommand('tamarin.play_interactive_auto')
+      }
+      else if (selectedAction && selectedAction.label === 'Run Tamarin Prover'){
+        vscode.commands.executeCommand('tamarin.play_cli')
+      }
+      else if (selectedAction && selectedAction.label === 'Run Tamarin Prover with auto-sources option'){
+        vscode.commands.executeCommand('tamarin.play_cli_auto')
       }
     });
 
-  const runTamarin = vscode.commands.registerCommand('tamarin.play', async () => {
+  const runTamarinInteractive = vscode.commands.registerCommand('tamarin.play_interactive', async () => {
       const activeEditor = vscode.window.activeTextEditor;
       if(activeEditor){
           await activeEditor.document.save();
@@ -42,7 +50,7 @@ export function runShortcut(context : vscode.ExtensionContext){
       }
   });
 
-      const runTamarinAutoSources = vscode.commands.registerCommand('tamarin.play2', async () => {
+      const runTamarinInteractiveAutoSources = vscode.commands.registerCommand('tamarin.play_interactive_auto', async () => {
           const activeEditor = vscode.window.activeTextEditor;
           if(activeEditor){
             await activeEditor.document.save();
@@ -58,7 +66,43 @@ export function runShortcut(context : vscode.ExtensionContext){
           }
 
   });
+        const runTamarinCli = vscode.commands.registerCommand('tamarin.play_cli', async () => {
+          const activeEditor = vscode.window.activeTextEditor;
+          if(activeEditor){
+            await activeEditor.document.save();
+            const document = activeEditor.document;
+            const filePath = document.uri.fsPath;
+            const fileDirectory = path.dirname(filePath)
+            const terminal = vscode.window.createTerminal({
+                name: `Play: Tamarin`,
+                cwd: fileDirectory
+            });
+            terminal.sendText(`tamarin-prover "${filePath}"`);
+            terminal.show();
+          }
+          
+  });
+
+          const runTamarinCliAutoSources = vscode.commands.registerCommand('tamarin.play_cli_auto', async () => {
+          const activeEditor = vscode.window.activeTextEditor;
+          if(activeEditor){
+            await activeEditor.document.save();
+            const document = activeEditor.document;
+            const filePath = document.uri.fsPath;
+            const fileDirectory = path.dirname(filePath)
+            const terminal = vscode.window.createTerminal({
+                name: `Play: Tamarin`,
+                cwd: fileDirectory
+            });
+            terminal.sendText(`tamarin-prover "${filePath}" --auto-sources`);
+            terminal.show();
+          }
+          
+  });
+
   context.subscriptions.push(showActions);
-  context.subscriptions.push(runTamarin);
-  context.subscriptions.push(runTamarinAutoSources);
+  context.subscriptions.push(runTamarinInteractive);
+  context.subscriptions.push(runTamarinInteractiveAutoSources);
+  context.subscriptions.push(runTamarinCli);
+  context.subscriptions.push(runTamarinCliAutoSources);
   }
