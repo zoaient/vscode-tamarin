@@ -1,4 +1,4 @@
-import Parser = require("web-tree-sitter");
+import * as Parser from "web-tree-sitter";
 import { TamarinSymbolTable, set_associated_qf } from '../../symbol_table/create_symbol_table';
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Diagnostic } from 'vscode-languageserver';
@@ -8,8 +8,8 @@ import { DeclarationType, TamarinSymbol} from "../../symbol_table/tamarinTypes";
 /* Function used to check if a term is associated to a quantified formula in a lemma */ 
 export function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: TextDocument): Diagnostic[]{
     const diags : Diagnostic[] = [];
-    let lemma_vars : TamarinSymbol[] = [];
-    for (let symbol of symbol_table.getSymbols()){
+    const lemma_vars : TamarinSymbol[] = [];
+    for (const symbol of symbol_table.getSymbols()){
         if(symbol.declaration === DeclarationType.LemmaVariable || symbol.declaration === DeclarationType.RestrictionVariable){
             lemma_vars.push(symbol);
         }
@@ -22,7 +22,7 @@ export function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, edit
         let context = lemma_vars[i].context;
         let globalisbreak = false;
         while(context?.grammarType !== 'theory'){
-            let context_child_id: number[] = [];
+            const context_child_id: number[] = [];
             if(context?.children){
                 let search_context = context
                 let gt_list = get_child_grammar_type(search_context)

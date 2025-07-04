@@ -1,5 +1,5 @@
 import { TextDocument } from "vscode-languageserver-textdocument";
-import Parser = require("web-tree-sitter");
+import * as Parser from "web-tree-sitter";
 import { Range} from 'vscode-languageserver/node';
 import { check_reserved_facts} from '../features/checks/checkReservedFacts';
 import {getName} from '../features/checks/utils'
@@ -16,10 +16,10 @@ export type CreateSymbolTableResult = {
 /* Function used to register the symbol table for each file */ 
 
 export const createSymbolTable = async (root: Parser.SyntaxNode, document: TextDocument): Promise<{ symbolTable: TamarinSymbolTable, diags: Diagnostic[] }> => {
-    let diags: Diagnostic[] = []; 
+    const diags: Diagnostic[] = []; 
     const symbolTableVisitor = new SymbolTableVisitor();
     const symbolTable =  await  symbolTableVisitor.visit(root, document, diags);
-    symbolTable.setRootNodedocumentDiags(root, document, diags);
+    symbolTable.setRootNodedocumentDiags(root);
     convert_linear_facts(symbolTable);
     return {symbolTable,diags};
 };
@@ -27,7 +27,7 @@ export const createSymbolTable = async (root: Parser.SyntaxNode, document: TextD
 /* Given the tree structure persistent facts are just linear facts with a ! as left sibling 
 function used to set the right type */
 function convert_linear_facts(ts : TamarinSymbolTable){
-    for (let symbol of ts.getSymbols()){
+    for (const symbol of ts.getSymbols()){
         if(symbol.declaration === DeclarationType.LinearF && symbol.node.previousSibling?.grammarType === "!"){
             symbol.declaration = DeclarationType.PersistentF;
             
@@ -39,7 +39,7 @@ function convert_linear_facts(ts : TamarinSymbolTable){
 function convert(grammar_type : string) : DeclarationType{
     if(grammar_type === 'nary_app'){return DeclarationType.NARY}
     else if(grammar_type === 'linear_fact'){return DeclarationType.LinearF}
-    else{return DeclarationType.DEFAULT};
+    else{return DeclarationType.DEFAULT}
 }
 
 class SymbolTableVisitor{
@@ -47,12 +47,12 @@ class SymbolTableVisitor{
     private readonly symbolTable : TamarinSymbolTable = new TamarinSymbolTable() ,
     private context: undefined | Parser.Tree = undefined){
         this.context = context
-    };
+    }
     private visitcounter : number = 0; // Used to add fst snd and pair symbols only once
     
     protected defaultResult(): TamarinSymbolTable {
         return this.symbolTable;
-    };
+    }
 
     /* Method that builds the symbol table adding every symbols while visiting the AST*/
     public async visit(root : Parser.SyntaxNode, document: TextDocument, diags: Diagnostic[]): Promise<TamarinSymbolTable>{
@@ -90,7 +90,7 @@ class SymbolTableVisitor{
                 continue;
             }
             else if(child?.grammarType === DeclarationType.Functions ){
-                for (let grandchild of child.children){
+                for (const grandchild of child.children){
                     if(grandchild.grammarType === DeclarationType.FUNCP || grandchild.grammarType === DeclarationType.FUNCPR || grandchild.grammarType === DeclarationType.FUNCD || grandchild.grammarType === DeclarationType.FUNCUST){
                         const funcNameNode = grandchild.child(0);
                         if (funcNameNode) {
@@ -108,7 +108,7 @@ class SymbolTableVisitor{
                 }
             }
             else if( child?.grammarType === DeclarationType.Macros || child?.grammarType === DeclarationType.Equations){
-                for(let grandchild of child.children){
+                for(const grandchild of child.children){
                     if(grandchild.grammarType === DeclarationType.Macro){
                         const macroNameNode = grandchild.child(0);
                         if (macroNameNode) {
@@ -116,7 +116,7 @@ class SymbolTableVisitor{
                         }
                         this.register_facts_searched(grandchild, document, grandchild, DeclarationType.NARY)
                         let eqcount = 0  ;                
-                        for(let ggchild of grandchild.children){
+                        for(const ggchild of grandchild.children){
                             if(ggchild.grammarType === "="){
                                 eqcount ++ ;
                             }
@@ -133,7 +133,7 @@ class SymbolTableVisitor{
                         diags.push(...check_reserved_facts(grandchild, document))
                         this.register_facts_searched(grandchild, document, grandchild, DeclarationType.NARY);   
                         let eqcount = 0  ;                
-                        for(let ggchild of grandchild.children){
+                        for(const ggchild of grandchild.children){
                             if(ggchild.grammarType === "="){
                                 eqcount ++ ;
                                 continue;
@@ -153,7 +153,7 @@ class SymbolTableVisitor{
             }
             else if (child?.grammarType === DeclarationType.Builtins){
                 let pkcount = 0;
-                for (let grandchild of child.children){
+                for (const grandchild of child.children){
                     if(grandchild.grammarType === DeclarationType.Builtin && grandchild.child(0) !== null){
                         const builtinType = grandchild.child(0)?.grammarType ?? '';
                         this.registerident(grandchild, DeclarationType.Builtin, builtinType, root, get_range(grandchild));
@@ -172,11 +172,11 @@ class SymbolTableVisitor{
                 }
             }
             else if(child?.grammarType === DeclarationType.ActionF){
-                for (let grandchild of child.children){
+                for (const grandchild of child.children){
                     if(grandchild.grammarType === DeclarationType.LinearF && grandchild.child(2) !== null ){
                         const args = grandchild.child(2)?.children;
                         if(args){
-                            let arity: number = get_arity(args)
+                            const arity: number = get_arity(args)
                         const node = grandchild.child(0);
                         if(node){
                             this.registerfucntion(grandchild, DeclarationType.ActionF, getName(grandchild.child(0), document), arity, root, get_range(node))
@@ -205,15 +205,15 @@ class SymbolTableVisitor{
             }
         }
         return this.symbolTable
-    };
+    }
 
     //Method used to register vars found by find variables function 
     private register_vars_rule(node :Parser.SyntaxNode, type : DeclarationType, document : TextDocument, root : Parser.SyntaxNode){
-        let vars: Parser.SyntaxNode[] = find_variables(node);
+        const vars: Parser.SyntaxNode[] = find_variables(node);
                 for(let k = 0; k < vars.length; k++){
                     if(vars[k].grammarType === DeclarationType.MVONF){
                         let isregistered = false
-                        for(let symbol of this.symbolTable.getSymbols()){
+                        for(const symbol of this.symbolTable.getSymbols()){
                             if(symbol.declaration === DeclarationType.Functions){
                                 if(symbol.name === getName(vars[k], document)){
                                     isregistered = true;
@@ -240,7 +240,7 @@ class SymbolTableVisitor{
     private register_vars_left_macro_part(node :Parser.SyntaxNode, type : DeclarationType, document : TextDocument, root : Parser.SyntaxNode){
         if(node.grammarType === DeclarationType.MVONF){
             let isregistered = false
-                        for(let symbol of this.symbolTable.getSymbols()){
+                        for(const symbol of this.symbolTable.getSymbols()){
                             if(symbol.declaration === DeclarationType.Functions){
                                 if(symbol.name === getName(node, document)){
                                     isregistered = true;
@@ -265,7 +265,7 @@ class SymbolTableVisitor{
     }
 
     private register_vars_lemma(node :Parser.SyntaxNode, type : DeclarationType, document : TextDocument){
-        let vars: Parser.SyntaxNode[] = find_variables(node);
+        const vars: Parser.SyntaxNode[] = find_variables(node);
         for(let k = 0; k < vars.length; k++){
             let context: Parser.SyntaxNode = vars[k];
             while(context.grammarType !== DeclarationType.NF  && context.grammarType !== 'conjunction' && context.grammarType !== 'disjunction' && (context.grammarType !== DeclarationType.Lemma && context.grammarType !== DeclarationType.Restriction && context.grammarType !== 'diff_lemma') ){
@@ -276,7 +276,7 @@ class SymbolTableVisitor{
             if(vars[k].parent !== null){
                 if(vars[k].grammarType === DeclarationType.MVONF ||  (vars[k].grammarType === DeclarationType.TMPV  && vars[k].children.length === 1)){
                     let isregistered = false
-                    for(let symbol of this.symbolTable.getSymbols()){
+                    for(const symbol of this.symbolTable.getSymbols()){
                         if(symbol.declaration === DeclarationType.Functions){
                             if(symbol.name === getName(vars[k], document)){
                                 isregistered = true;
@@ -304,20 +304,20 @@ class SymbolTableVisitor{
 
     /* Function used to register the facts found with find_linear_fact*/
     private register_facts_searched(node :Parser.SyntaxNode, document : TextDocument, root : Parser.SyntaxNode, type ?: DeclarationType){
-        let vars: Parser.SyntaxNode[] = find_linear_fact(node);
+        const vars: Parser.SyntaxNode[] = find_linear_fact(node);
         for(let k = 0; k < vars.length; k++){
             const factName = getName(vars[k].child(0), document);
             if(ReservedFacts.includes(factName)){
                 continue;
             }
             let isFunction = false;
-            for(let symbol of this.symbolTable.getSymbols()) {
+            for(const symbol of this.symbolTable.getSymbols()) {
                 if(symbol.declaration === DeclarationType.Functions && symbol.name === factName) {
                     isFunction = true;
                     if(vars[k].child(2) !== null){
                         const args = vars[k].child(2)?.children;
                         if(args){
-                            let arity: number = get_arity(args);
+                            const arity: number = get_arity(args);
                             const factNameNode = vars[k].child(0);
                             if(factNameNode){
                                 this.registerfucntion(vars[k], DeclarationType.NARY, factName, arity, root, get_range(factNameNode));
@@ -333,7 +333,7 @@ class SymbolTableVisitor{
             if(vars[k].child(2) !== null){
                 const args = vars[k].child(2)?.children;
                 if(args){
-                    let arity: number = get_arity(args);
+                    const arity: number = get_arity(args);
                     const factNameNode = vars[k].child(0);
                     if(factNameNode){
                     if(type){
@@ -350,7 +350,7 @@ class SymbolTableVisitor{
 
     /* Same as above but for functions */
     private register_narry(node :Parser.SyntaxNode, document : TextDocument, root : Parser.SyntaxNode){
-        let vars: Parser.SyntaxNode[] = find_narry(node);
+        const vars: Parser.SyntaxNode[] = find_narry(node);
         for(let k = 0; k < vars.length; k++){
             if(ReservedFacts.includes(getName(vars[k].child(0),document))){
                 continue;
@@ -360,7 +360,7 @@ class SymbolTableVisitor{
                 if(node.child(2) !== null){
                     const args = vars[k].child(2)?.children;
                     if(args){
-                        let arity: number = get_arity(args);
+                        const arity: number = get_arity(args);
                         this.registerfucntion(vars[k], convert(vars[k].grammarType) , getName(vars[k].child(0),document),arity, root, get_range(nodeName));
                     }
                 }
@@ -387,7 +387,7 @@ class SymbolTableVisitor{
             name_range : range,
         });
 
-    };
+    }
 
     private registerfucntion(ident : Parser.SyntaxNode|null|undefined, declaration: DeclarationType, name : string, arity : number,  context : Parser.SyntaxNode , range : Range){
         if(!ident){
@@ -402,10 +402,10 @@ class SymbolTableVisitor{
             name_range : range
         });
 
-    };
+    }
 
     
-};
+}
 
 
 
@@ -423,11 +423,11 @@ export class TamarinSymbolTable{
 
     public addSymbol(symbol: TamarinSymbol) {
         this.symbols.push(symbol);
-    };
+    }
 
     public getSymbols(): TamarinSymbol[] {
         return this.symbols;
-    };
+    }
 
     public setSymbols(symbols : TamarinSymbol[]): void{
         this.symbols = symbols;
@@ -435,9 +435,9 @@ export class TamarinSymbolTable{
 
     public getSymbol(int : number):TamarinSymbol{
         return this.symbols[int];
-    };
+    }
 
-    public setRootNodedocumentDiags(root : Parser.SyntaxNode, document : TextDocument, diags : Diagnostic[]): void{
+    public setRootNodedocumentDiags(root : Parser.SyntaxNode): void{
         this.root_node = root;
     }
 
@@ -453,7 +453,7 @@ export class TamarinSymbolTable{
             DeclarationType.Restriction, 
             DeclarationType.Macro
         ];
-        let symbol = this.symbols.find(s => 
+        const symbol = this.symbols.find(s => 
             s.name === name && primaryDeclarations.includes(s.declaration)
         );
         if (symbol) {
@@ -462,4 +462,4 @@ export class TamarinSymbolTable{
         return this.symbols.find(s => s.name === name);
     }
 
-};
+}

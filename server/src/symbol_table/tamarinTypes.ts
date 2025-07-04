@@ -1,4 +1,4 @@
-import Parser = require("web-tree-sitter");
+import * as Parser from "web-tree-sitter";
 import { Range} from 'vscode-languageserver/node';
 
 // Contains every node types used to detect symbols.
@@ -44,7 +44,7 @@ export enum DeclarationType{
     DEFAULT = 'default',
     Macro = 'macro',
     Equation = 'equation'
-};
+}
 
 export enum variable_types{
     PUB = '$',

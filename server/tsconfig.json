@@ -9,7 +9,8 @@
 		"composite": true, 
 		"declaration": true, 
 		"declarationMap": true,
-		"outDir": "out"
+		"outDir": "out",
+		"skipLibCheck": true
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules", ".vscode-test"]

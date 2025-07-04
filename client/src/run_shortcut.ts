@@ -1,10 +1,10 @@
 
 import * as vscode from 'vscode';
-import path = require('path');
+import * as path from 'path';
 
 
 export function runShortcut(context : vscode.ExtensionContext){
-  let playButton : vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  const playButton : vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   playButton.text = "$(triangle-right) Run";
   playButton.command = "tamarin.showActions";
   playButton.show();

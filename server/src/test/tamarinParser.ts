@@ -1,8 +1,7 @@
-import fs = require('fs');
-import path = require('path');
-import Parser =require( "tree-sitter");
-import Tamarin = require("../../grammar/tree-sitter-tamarin/bindings/node")
-import { nodeTypeInfo } from 'tree-sitter-javascript';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as Parser from "tree-sitter";
+import * as Tamarin from "../../grammar/tree-sitter-tamarin/bindings/node";
 
 
 

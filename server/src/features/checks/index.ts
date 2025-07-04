@@ -1,4 +1,4 @@
-import Parser = require("web-tree-sitter");
+import * as Parser from "web-tree-sitter";
 import { TamarinSymbolTable } from '../../symbol_table/create_symbol_table';
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Diagnostic } from 'vscode-languageserver';
@@ -32,4 +32,4 @@ export function checks_with_table(symbol_table : TamarinSymbolTable, document: T
         ...spellingWarnings
     ];
     return allDiagnostics;
-};
+}

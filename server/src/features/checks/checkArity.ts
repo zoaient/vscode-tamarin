@@ -8,11 +8,11 @@ import { DeclarationType, TamarinSymbol} from "../../symbol_table/tamarinTypes";
 
 export function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable, editor: TextDocument): Diagnostic[]{
     const diags : Diagnostic[] = [];
-    let known_functions : TamarinSymbol[] = [];
-    let errors : string[] = []
+    const known_functions : TamarinSymbol[] = [];
+    const errors : string[] = []
     function getNames(list : TamarinSymbol[]): string[]{
-        let str_list : string[] = [];
-        for(let symbol of list){
+        const str_list : string[] = [];
+        for(const symbol of list){
             if(symbol.name){
                 str_list.push(symbol.name);
             }
@@ -20,7 +20,7 @@ export function check_function_macros_and_facts_arity(symbol_table : TamarinSymb
         return str_list;
     }
     for( let i = 0; i < symbol_table.getSymbols().length; i++){
-        let current_symbol = symbol_table.getSymbol(i);
+        const current_symbol = symbol_table.getSymbol(i);
         if(symbol_table.getSymbol(i).declaration === DeclarationType.LinearF || symbol_table.getSymbol(i).declaration === DeclarationType.PersistentF || symbol_table.getSymbol(i).declaration === DeclarationType.Functions || symbol_table.getSymbol(i).declaration === DeclarationType.NARY || symbol_table.getSymbol(i).declaration === DeclarationType.Macro){
             if(current_symbol.name){
                 if(getNames(known_functions).includes(current_symbol.name)){
@@ -53,16 +53,16 @@ export function check_function_macros_and_facts_arity(symbol_table : TamarinSymb
             }
         }
     }
-    for(let symbol of symbol_table.getSymbols()){
+    for(const symbol of symbol_table.getSymbols()){
         if(symbol.name)
         if(errors.includes(symbol.name)){
             diags.push(build_error_display(symbol.node, editor, " Error : incoherent arity"))
         }
     }
-    for(let symbol of known_functions){
+    for(const symbol of known_functions){
         let isbreak = false;
         if(symbol.declaration === DeclarationType.NARY){
-            for( let functionSymbol of known_functions){
+            for( const functionSymbol of known_functions){
                 if(functionSymbol.name === symbol.name && functionSymbol !== symbol){
                     isbreak = true;
                     break;
@@ -70,7 +70,7 @@ export function check_function_macros_and_facts_arity(symbol_table : TamarinSymb
             }
             if(!isbreak){
                 diags.push(build_error_display(symbol.node, editor, "Error : unknown function or macro"));
-                for(let functionSymbol of known_functions){
+                for(const functionSymbol of known_functions){
                     if (typeof symbol.name === 'string' && typeof functionSymbol.name === 'string'&& symbol.name !== functionSymbol.name && symbol.arity === functionSymbol.arity ) {
                         const distance = levenshteinDistance(symbol.name, functionSymbol.name);
                         if (distance < 3) { // threshold value

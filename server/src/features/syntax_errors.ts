@@ -1,4 +1,4 @@
-import Parser =require( "web-tree-sitter");
+import * as Parser from "web-tree-sitter";
 import { Diagnostic , DiagnosticSeverity ,Range , Position} from 'vscode-languageserver';
 import { TextDocument } from "vscode-languageserver-textdocument";
 import {build_error_display} from './checks/utils'
@@ -23,7 +23,7 @@ function get_child_index(node : Parser.SyntaxNode): number|null{
 I tried to personnalize error messages according to the different cases
 I did the most common ones*/
 export async function detect_errors(tree:Parser.SyntaxNode,document: TextDocument): Promise<{diagnostics: Diagnostic[] }> {
-    let diags: Diagnostic[] = [];
+    const diags: Diagnostic[] = [];
 
     // This is where i tried to detect particular cases for syntax errors based on nodes position 
     function typesOfError(node : Parser.SyntaxNode){
@@ -64,7 +64,7 @@ export async function detect_errors(tree:Parser.SyntaxNode,document: TextDocumen
 }
     function findMatches(node : Parser.SyntaxNode) {
         if ((node.isMissing)) {
-            let myId = get_child_index(node);
+            const myId = get_child_index(node);
             if(myId === null){
                 return ;
             }
@@ -76,7 +76,7 @@ export async function detect_errors(tree:Parser.SyntaxNode,document: TextDocumen
                 else {
                     start = 0
                 }
-                let positionStart = document.positionAt(start?? 0);
+                const positionStart = document.positionAt(start?? 0);
                 const range = Range.create(positionStart, Position.create(positionStart.line, positionStart.character + 1));
                 const existingDiag = diags.find(d => rangeContains(d.range, positionStart));
                 if (!existingDiag) {
@@ -138,7 +138,7 @@ export async function detect_errors(tree:Parser.SyntaxNode,document: TextDocumen
         } 
         }
         // Iterate over all the AST
-        for (let child of node.children) {
+        for (const child of node.children) {
             findMatches(child);
         }
     }

@@ -1,14 +1,14 @@
-import Parser = require("web-tree-sitter");
+import * as Parser from "web-tree-sitter";
 import { TamarinSymbolTable} from '../../symbol_table/create_symbol_table';
 import { getName } from './utils';
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { Diagnostic , DiagnosticSeverity ,Range} from 'vscode-languageserver';
+import { Diagnostic , DiagnosticSeverity} from 'vscode-languageserver';
 import { DeclarationType, TamarinSymbol} from "../../symbol_table/tamarinTypes";
 
 /* Given a symbol table returns all the builtins present in it */ 
 function return_builtins(symbol_table: TamarinSymbolTable): TamarinSymbol[]{
-let builtins : TamarinSymbol[]  = [];
-    for (let symbol of symbol_table.getSymbols()){
+const builtins : TamarinSymbol[]  = [];
+    for (const symbol of symbol_table.getSymbols()){
         if(symbol.declaration === DeclarationType.Builtin){
             builtins.push(symbol);
         }
@@ -18,8 +18,8 @@ let builtins : TamarinSymbol[]  = [];
 
 /* Given a list of builtins returns there name */
 function get_builtins_name(builtins : TamarinSymbol[]): string[]{
-    let Sbuiltins : string[] = [];
-    for (let builtin of builtins ){
+    const Sbuiltins : string[] = [];
+    for (const builtin of builtins ){
         if(builtin.name)
         Sbuiltins.push(builtin.name)
     }
@@ -27,8 +27,8 @@ function get_builtins_name(builtins : TamarinSymbol[]): string[]{
 }
 
 function return_functions(symbol_table: TamarinSymbolTable): string[]{
-    let builtins : string[]  = [];
-        for (let symbol of symbol_table.getSymbols()){
+    const builtins : string[]  = [];
+        for (const symbol of symbol_table.getSymbols()){
             if(symbol.declaration === DeclarationType.Functions && symbol.name){
                 builtins.push(symbol.name);
             }
@@ -41,8 +41,8 @@ Also works with functions defined in builtins*/
 export function check_infix_operators(symbol_table : TamarinSymbolTable, editor : TextDocument, root : Parser.SyntaxNode): Diagnostic[]{
     const diags : Diagnostic[] = [];
     function display_infix_error(builtin: string, symbol: string, child: Parser.SyntaxNode): void {
-        let current_builtins = return_builtins(symbol_table);
-        let current_functions = return_functions(symbol_table)
+        const current_builtins = return_builtins(symbol_table);
+        const current_functions = return_functions(symbol_table)
         if (!get_builtins_name(current_builtins).includes(builtin) && !current_functions.includes(getName(child.child(0), editor))) {
             if(current_builtins.length > 0){
             const diagnostic: Diagnostic = {
@@ -61,25 +61,21 @@ export function check_infix_operators(symbol_table : TamarinSymbolTable, editor 
                     theory = theory.parent
                 }
                 theory = theory.child(3) as Parser.SyntaxNode
-                const range = Range.create(
-                    editor.positionAt(theory.startIndex),
-                    editor.positionAt(theory.endIndex)
-                );
             }  
         }
       }
-    for (let child of root.children){
+    for (const child of root.children){
         if(child.grammarType === '^' || child.grammarType === '*'){
-            let current_builtins = return_builtins(symbol_table);
+            const current_builtins = return_builtins(symbol_table);
             if(! get_builtins_name(current_builtins).includes('diffie-hellman')){
                 display_infix_error('diffie-hellman', '^ or *', child) 
                 }
         }
         else if (child.grammarType === '⊕'){
-            display_infix_error('xor','⊕', child);;
+            display_infix_error('xor','⊕', child);
         }
         else if (child.grammarType === '++'){
-            display_infix_error('multiset', '++', child);;
+            display_infix_error('multiset', '++', child);
         }
         else if (child.grammarType === '%+'){
             display_infix_error('natural-numbers', '%+', child);

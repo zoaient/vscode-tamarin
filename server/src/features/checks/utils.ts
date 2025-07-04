@@ -1,4 +1,4 @@
-import Parser = require("web-tree-sitter");
+import * as Parser from "web-tree-sitter";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Diagnostic , DiagnosticSeverity ,Range} from 'vscode-languageserver';
 
@@ -74,8 +74,8 @@ export function levenshteinDistance(s1: string , s2 : string): number {
 
 // Function to get the grammar type of a node 
 export function get_child_grammar_type(node :Parser.SyntaxNode): string[]{
-    let results : string[] = []
-    for(let child of node.children) {
+    const results : string[] = []
+    for(const child of node.children) {
         results.push(child.grammarType)
     }
     return results;

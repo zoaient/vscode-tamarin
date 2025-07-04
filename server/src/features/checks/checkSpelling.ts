@@ -10,7 +10,7 @@ export function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor
     const facts : TamarinSymbol["name"][]  = [];
     let count = 0;
     for( let i = 0 ; i < symbol_table.getSymbols().length; i++){
-        let current_symbol = symbol_table.getSymbol(i);
+        const current_symbol = symbol_table.getSymbol(i);
         if(current_symbol.declaration === DeclarationType.LinearF || current_symbol.declaration ===
         DeclarationType.PersistentF ||  current_symbol.declaration === DeclarationType.ActionF ){
             const name  = current_symbol.name;
@@ -54,6 +54,6 @@ export function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor
             }
         }
         if(count > 0){break;}
-    };
+    }
     return diags
-};
+}

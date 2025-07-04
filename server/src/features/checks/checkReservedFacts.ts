@@ -1,4 +1,4 @@
-import Parser = require("web-tree-sitter");
+import * as Parser from "web-tree-sitter";
 import { get_arity} from '../../symbol_table/utils';
 import { TextDocument  } from "vscode-languageserver-textdocument";
 import { Diagnostic} from 'vscode-languageserver';
@@ -10,7 +10,7 @@ import { DeclarationType} from "../../symbol_table/tamarinTypes";
  checks if they are in the wright place and used with the correct arity */
 export function check_reserved_facts(node : Parser.SyntaxNode, editor : TextDocument): Diagnostic[] {
     const diags: Diagnostic[] = [];
-    for(let child of node.children){
+    for(const child of node.children){
         if(child.grammarType === DeclarationType.LinearF ||child.grammarType === DeclarationType.PersistentF){
             const fact_name = getName(child.child(0), editor);
             if(fact_name === ReservedFacts[0]){
@@ -63,4 +63,4 @@ export function check_reserved_facts(node : Parser.SyntaxNode, editor : TextDocu
     }
     return diags;
     
-};
+}

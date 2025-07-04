@@ -7,10 +7,10 @@ import { DeclarationType,TamarinSymbol} from "../../symbol_table/tamarinTypes";
 /* This function performs various checks on action facts : wether they are declared ord not and if the arity is correct */ 
 export function check_action_fact(symbol_table : TamarinSymbolTable, editor: TextDocument): Diagnostic[]{
     const diags : Diagnostic[] = [];
-    let actionFacts: TamarinSymbol[] = [];
-    let errors : string[] = []
+    const actionFacts: TamarinSymbol[] = [];
+    const errors : string[] = []
     for( let i = 0 ; i < symbol_table.getSymbols().length; i++){
-        let current_symbol = symbol_table.getSymbol(i);
+        const current_symbol = symbol_table.getSymbol(i);
         if(current_symbol.declaration === DeclarationType.ActionF && current_symbol.context?.grammarType !== 'simple_rule'){
             let found_one = false;
             for(let j = 0; j < actionFacts.length; j++){
@@ -36,7 +36,7 @@ export function check_action_fact(symbol_table : TamarinSymbolTable, editor: Tex
             continue;
         }
     }
-    for(let symbol of symbol_table.getSymbols()){
+    for(const symbol of symbol_table.getSymbols()){
         if(symbol.name)
         if(errors.includes(symbol.name)){
             diags.push(build_error_display(symbol.node, editor, " Error : incoherent arity"))

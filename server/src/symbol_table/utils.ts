@@ -1,5 +1,5 @@
 import { DeclarationType} from "./tamarinTypes";
-import Parser = require("web-tree-sitter");
+import * as  Parser from "web-tree-sitter";
 import { Range, Position } from 'vscode-languageserver/node';
 
 
@@ -12,7 +12,7 @@ export function find_variables(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
         return vars
     }
        
-    for( let child of node.children){
+    for( const child of node.children){
 
          //This is used to skip errors in proof methods modify it if you want to manage proof methods
          if(child.grammarType === "proof_method"){
@@ -33,7 +33,7 @@ export function find_variables(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
 /* Same as the above function but for facts or functions*/
 export function find_linear_fact(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     let vars : Parser.SyntaxNode[] = []
-    for( let child of node.children){
+    for( const child of node.children){
 
         //This is used to skip errors in proof methods modify it if you want to manage proof methods
         if(child.grammarType === "proof_method"){
@@ -53,7 +53,7 @@ export function find_linear_fact(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
 
 export function find_narry(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     let vars : Parser.SyntaxNode[] = []
-    for( let child of node.children){
+    for( const child of node.children){
         if(child.grammarType === DeclarationType.NARY){
             vars.push(child)
             vars = vars.concat(find_linear_fact(child));
@@ -69,7 +69,7 @@ export function find_narry(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
 export function get_arity(node : Parser.SyntaxNode[]|undefined): number{
     let arity: number = 0;
     if(node)
-    for (let arg of node){
+    for (const arg of node){
         if(arg.type !== ","){
             arity ++;
         }
@@ -81,7 +81,7 @@ export function get_arity(node : Parser.SyntaxNode[]|undefined): number{
 export function get_macro_arity(node : Parser.SyntaxNode[]|undefined): number{
     let arity: number = -1;
     if(node)
-    for (let arg of node){
+    for (const arg of node){
         if(arg.type === "="){
             break
         }

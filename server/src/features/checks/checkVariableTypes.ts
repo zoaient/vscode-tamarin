@@ -9,7 +9,7 @@ Also checks that if a variables is in the right side of a macro or equation it i
 export function check_variables_type_is_consistent_inside_a_rule(symbol_table : TamarinSymbolTable, editor: TextDocument) : Diagnostic[]{
     const diags : Diagnostic[] = [];
     for (let i = 0 ; i < symbol_table.getSymbols().length; i++){
-        let current_symbol = symbol_table.getSymbol(i);
+        const current_symbol = symbol_table.getSymbol(i);
         if(current_symbol.declaration === DeclarationType.PRVariable || current_symbol.declaration === DeclarationType.CCLVariable || current_symbol.declaration === DeclarationType.ActionFVariable ){
             for(let j = 0; j < symbol_table.getSymbols().length; j++){
                 if((current_symbol.declaration === DeclarationType.PRVariable || current_symbol.declaration === DeclarationType.CCLVariable || current_symbol.declaration === DeclarationType.ActionFVariable) && i !== j){
@@ -35,7 +35,7 @@ export function check_variables_type_is_consistent_inside_a_rule(symbol_table : 
         // Check about the equation variables
         else if (current_symbol.declaration === DeclarationType.REquationVariable){
             let isbreak = false;
-            for (let symbol of symbol_table.getSymbols()){
+            for (const symbol of symbol_table.getSymbols()){
                 if(symbol.declaration === DeclarationType.LEquationVariable && symbol.name === current_symbol.name && symbol.context === current_symbol.context){
                     isbreak = true;
                     break;
@@ -52,7 +52,7 @@ export function check_variables_type_is_consistent_inside_a_rule(symbol_table : 
             if(current_symbol.type === '$'){
                 continue;
             }
-            for (let symbol of symbol_table.getSymbols()){
+            for (const symbol of symbol_table.getSymbols()){
                 if(symbol.declaration === DeclarationType.LMacroVariable && symbol.name === current_symbol.name && symbol.context === current_symbol.context){
                     isbreak = true;
                     break;
@@ -68,4 +68,4 @@ export function check_variables_type_is_consistent_inside_a_rule(symbol_table : 
         }
     }
     return diags;
-};
+}
