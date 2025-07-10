@@ -28,7 +28,7 @@ export function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor
                     facts.push(current_symbol.name)
                     continue;
                 }
-                //---------
+                //FIXME : doesn't work in inverse order 
                 for( let j = 0; j < facts.length ; j++ ){
                     const name2 = facts[j];
                     if(name2){

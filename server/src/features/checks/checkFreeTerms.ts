@@ -19,9 +19,9 @@ export function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, edit
             set_associated_qf(lemma_vars[i], lemma_vars[i].node.parent)
             continue;
         }
-        let context = lemma_vars[i].context;
+        let context: Parser.SyntaxNode | null = lemma_vars[i].context;
         let globalisbreak = false;
-        while(context?.grammarType !== 'theory'){
+        while(context?.grammarType !== 'theory' && context){
             const context_child_id: number[] = [];
             if(context?.children){
                 let search_context = context
@@ -62,11 +62,10 @@ export function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, edit
                 break;
             }
             else {
-                if(context?.parent){
-                    context = context?.parent
-                }
+                context = context?.parent
             }
         }
+        
         if(!globalisbreak){
             diags.push(build_warning_display(lemma_vars[i].node, editor, "Warning : free term in lemma or restriction formula"))
         }
