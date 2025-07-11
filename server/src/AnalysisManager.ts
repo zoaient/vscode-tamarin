@@ -47,7 +47,6 @@ export class AnalysisManager{
     public getDefinition(document: TextDocument, position: Position): Location | null {
         if(!this.parser) {
             throw new Error("Parser not initialized");
-            return null;
         }
         const table = this.symbolTable.get(document.uri);
         if (!table) {

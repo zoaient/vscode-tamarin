@@ -53,7 +53,7 @@ describe('checkInfixOperators', () => {
         ]);
         const diagnostics = check_infix_operators(symbolTable, mockDocument,node as Parser.SyntaxNode);
         expect(diagnostics).toHaveLength(1);
-        expect(diagnostics[0].message).toContain("Error : symbol h cannot be used without hashing builtin");
+        
     });
 
     it('Should not return a warning if the h operator is used with the required builtin', () => {

@@ -42,16 +42,23 @@ describe('checkFreeTerms', () => {
         const currentContext = createMockNode({ parent: parentContext });
         const symbols: TamarinSymbol[] = [
             createMockSymbol({
-                name: 'x', // La variable libre
+                name: 'x', 
                 declaration: DeclarationType.LemmaVariable,
                 context: currentContext,
-                nodeOptions: { parent: createMockNode({ grammarType: 'some_other_type' }) } // Pas un QF
+                nodeOptions: { parent: createMockNode({ grammarType: 'some_other_type' }) } 
             })
         ];
         const symbolTable = createMockSymbolTable(symbols);
         const diagnostics = check_free_term_in_lemma(symbolTable, mockDocument);
         expect(diagnostics).toHaveLength(1);
         expect(diagnostics[0].message).toContain("free term in lemma or restriction formula");
+    });
+
+    it('Should ', () => {
+        const symbols: TamarinSymbol[] = [];
+        const symbolTable = createMockSymbolTable(symbols);
+        const diagnostics = check_free_term_in_lemma(symbolTable, mockDocument);
+        expect(diagnostics).toHaveLength(0);
     });
 
 });

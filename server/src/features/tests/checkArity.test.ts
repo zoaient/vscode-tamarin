@@ -2,7 +2,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import {TamarinSymbol } from '../../symbol_table/tamarinTypes'; 
 import { DeclarationType } from '../../symbol_table/tamarinTypes'; 
 import {check_function_macros_and_facts_arity} from '../checks/checkArity'
-import { createMockNode, createMockSymbol, createMockSymbolTable , } from './utils';
+import { createMockSymbol, createMockSymbolTable , } from './utils';
 
 
 const mockDocument = TextDocument.create('file:///test.spthy', 'tamarin', 1, '');
