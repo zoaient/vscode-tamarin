@@ -45,21 +45,6 @@
     ],
     "commands": [
       {
-        "command": "tamarin.renameCodeAction",
-        "when": "editorLangId == tamarin",
-        "title": "Rename"
-      },
-      {
-        "command": "Rename",
-        "title": "Rename",
-        "when": "editorLangId == tamarin"
-      },
-      {
-        "command": "Search definition",
-        "title": "Search definition",
-        "when": "editorLangId == tamarin"
-      },
-      {
         "command": "extension.tabKeyBinding",
         "title": "Navigate to next symbol",
         "when": "editorLangId == tamarin"
@@ -80,20 +65,6 @@
     "configuration": {
       "title": "Tamarin",
       "properties": {}
-    },
-    "menus": {
-      "editor/context": [
-        {
-          "command": "Rename",
-          "group": "navigation",
-          "when": "editorTextFocus && editorLangId == tamarin && !inDebugRepl"
-        },
-        {
-          "command": "Search definition",
-          "group": "navigation",
-          "when": "editorTextFocus && editorLangId == tamarin && !inDebugRepl"
-        }
-      ]
     }
   },
   "main": "./client/out/extension.js",
