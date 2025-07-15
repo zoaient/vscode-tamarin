@@ -9,7 +9,7 @@ const docUri = 'file:///test.spthy';
 
 beforeAll(async () => {
     analysisManager = new AnalysisManager();
-    const parserPath = path.resolve(__dirname, '../../../grammar/tree-sitter-tamarin/tree-sitter-spthy.wasm');
+    const parserPath = path.resolve(process.cwd(), 'server/grammar/tree-sitter-tamarin/tree-sitter-spthy.wasm');
     await analysisManager.initParser(parserPath);
 });
 
