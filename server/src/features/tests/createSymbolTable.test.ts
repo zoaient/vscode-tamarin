@@ -9,7 +9,7 @@ let parser: Parser;
 beforeAll(async () => {
     await Parser.init();
     parser = new Parser();
-    const langPath = path.resolve(__dirname, '../../../out/grammar/tree-sitter-tamarin/tree-sitter-spthy.wasm'); 
+    const langPath = path.resolve(__dirname, '../../../grammar/tree-sitter-tamarin/tree-sitter-spthy.wasm'); 
     const Tamarin = await Parser.Language.load(langPath);
     parser.setLanguage(Tamarin);
 });
