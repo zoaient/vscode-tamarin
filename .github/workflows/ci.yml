@@ -26,8 +26,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name : ls
+        run : ls -R
+
       - name: Run linter and tests
-        run: npm run test && ls -R
+        run: npm run test 
 
 
     
