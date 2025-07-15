@@ -12,6 +12,7 @@ export const ExistingBuiltIns : string[] =
     'bilinear-pairing',
     'xor',
     'default',
+    'natural-numbers',
 ]
 
 //First the name and then the arity also mind the order above (inv and 1 are diffie-hellman functions etc …)

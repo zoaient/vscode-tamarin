@@ -268,7 +268,15 @@ class SymbolTableVisitor{
         const vars: Parser.SyntaxNode[] = find_variables(node);
         for(let k = 0; k < vars.length; k++){
             let context: Parser.SyntaxNode = vars[k];
-            while(context.grammarType !== DeclarationType.NF  && context.grammarType !== 'conjunction' && context.grammarType !== 'disjunction' && (context.grammarType !== DeclarationType.Lemma && context.grammarType !== DeclarationType.Restriction && context.grammarType !== 'diff_lemma') ){
+            while(context.grammarType !== DeclarationType.NF && 
+                context.grammarType !== 'conjunction' && 
+                context.grammarType !== 'disjunction' && 
+                context.grammarType !== DeclarationType.Lemma && 
+                context.grammarType !== DeclarationType.Restriction && 
+                context.grammarType !== 'diff_lemma' &&
+                context.grammarType !== 'term_eq' && //node used in equalities
+                context.grammarType !== 'temp_var_eq' //node used in equalities between temporal variables
+                ){
                 if(context.parent){
                     context = context.parent;
                 }

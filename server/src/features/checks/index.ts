@@ -10,6 +10,7 @@ import { check_free_term_in_lemma } from './checkFreeTerms';
 import { check_macro_not_in_equation } from './checkMacrosInEquations';
 import { check_infix_operators } from './checkInfixOperators';
 import { check_case_sensitivity } from './checkSpelling';
+import { check_equality_types} from './checkEqualityTypes'
 
 
 export function checks_with_table(symbol_table : TamarinSymbolTable, document: TextDocument, root : Parser.SyntaxNode): Diagnostic[]{
@@ -21,6 +22,7 @@ export function checks_with_table(symbol_table : TamarinSymbolTable, document: T
     const macroInEquationErrors = check_macro_not_in_equation(symbol_table, document);
     const infixOperatorErrors = check_infix_operators(symbol_table, document, root);
     const spellingWarnings = check_case_sensitivity(symbol_table, document);
+    const equalityErrors = check_equality_types(symbol_table,document);
     const allDiagnostics = [
         ...typeErrors,
         ...premiseErrors,
@@ -29,7 +31,8 @@ export function checks_with_table(symbol_table : TamarinSymbolTable, document: T
         ...freeTermWarnings,
         ...macroInEquationErrors,
         ...infixOperatorErrors,
-        ...spellingWarnings
+        ...spellingWarnings,
+        ...equalityErrors
     ];
     return allDiagnostics;
 }
