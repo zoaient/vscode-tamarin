@@ -27,7 +27,7 @@ jobs:
         run: npm install
 
       - name : ls
-        run : ls
+        run : cd server/grammar/tree-sitter-tamarin && ls
 
       - name: Run linter and tests
         run: npm run test 
