@@ -30,14 +30,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name : ls -l
-        run : cd server/grammar/tree-sitter-tamarin && ls -l
-
-      - name : Check WASM file integrity
-        run: |
-          echo "Checking checksum of WASM file..."
-          sha256sum server/grammar/tree-sitter-tamarin/tree-sitter-spthy.wasm
-
       - name: Run linter and tests
         run: npm run test 
 
