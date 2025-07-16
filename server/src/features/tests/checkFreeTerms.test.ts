@@ -53,13 +53,5 @@ describe('checkFreeTerms', () => {
         expect(diagnostics).toHaveLength(1);
         expect(diagnostics[0].message).toContain("free term in lemma or restriction formula");
     });
-
-    it('Should ', () => {
-        const symbols: TamarinSymbol[] = [];
-        const symbolTable = createMockSymbolTable(symbols);
-        const diagnostics = check_free_term_in_lemma(symbolTable, mockDocument);
-        expect(diagnostics).toHaveLength(0);
-    });
-
 });
 

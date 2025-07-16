@@ -17,7 +17,6 @@ export class AnalysisManager{
     public async initParser(parserPath: string): Promise<void> {
         await Parser.init();
         this.parser = new Parser();
-        console.log("Parser path:", parserPath);
         const Tamarin = await Parser.Language.load(parserPath);
         this.parser.setLanguage(Tamarin);
         console.log("Parser initialized with Tamarin language.");
@@ -35,7 +34,6 @@ export class AnalysisManager{
         console.log("Symbol table created for:", document.uri);
         console.log("Number of symbols found:", symbolTable.getSymbols().length);
         console.log("Wellformedness diagnostics:", wellformednessDiagnostics.length);
-        console.log("Symbol Table ", symbolTable);
         const allDiagnostics = [
             ...syntaxDiagnostics,
             ...wellformednessDiagnostics,
@@ -61,10 +59,8 @@ export class AnalysisManager{
             return null;
         }
         const symbolName = nodeAtcursor.text;
-        console.error('[Server] Looking for symbol "${symbolName}" in symbol table.');
         const symbol = table.getSymbols().find(sym => sym.name === symbolName);
         if (symbol && symbol.name_range) {
-            console.error(`[Server] getDefinition: Found symbol definition for "${symbol.name}".`);
             const location: Location = {
                 uri: document.uri,
                 range: symbol.name_range
@@ -72,7 +68,6 @@ export class AnalysisManager{
             };
             return location
         }
-        console.error(`[Server] getDefinition: Symbol "${symbolName}" not found in symbol table.`);
         return null;
 
     }
@@ -92,24 +87,19 @@ export class AnalysisManager{
         const point = {row: position.line, column: position.character};
         const nodeAtCursor = tree.rootNode.descendantForPosition(point);
         if (!nodeAtCursor) {
-            console.error(`No node found at position: ${point.row}, ${point.column}`);
             return null;
         }
         const oldname= tree.rootNode.namedDescendantForPosition(point).text;
-        console.error(oldname);
         const originalSymbol = table.getSymbols().find(symbol => 
             symbol.name === oldname && 
             symbol.name_range && 
             symbol.name_range.start.line === position.line && 
             symbol.name_range.start.character === position.character
         );
-        console.error(`[Server] handleRenameRequest: Looking for symbol at position ${position.line}:${position.character}.`);
-        console.error(`[Server] handleRenameRequest: Original symbol found: ${originalSymbol ? originalSymbol.name : 'none'}.`);
         if (!originalSymbol) return null;
         const edits: TextEdit[] = [];
         const chosenSymbolName = originalSymbol.name;
         for (const symbol of table.getSymbols()) {
-            console.error(symbol.name)
             let shouldRename=false;
             if (symbol.declaration === DeclarationType.PRVariable ||
                 symbol.declaration === DeclarationType.ActionFVariable ||
@@ -135,14 +125,12 @@ export class AnalysisManager{
             else if (symbol.name === chosenSymbolName && symbol.declaration === originalSymbol.declaration) { 
                 shouldRename = true;
             }
-            console.error(shouldRename)
             if (shouldRename) {
                 if (symbol.name_range) {
                     edits.push(TextEdit.replace(symbol.name_range, newName));
                 }
             }
         }
-        console.error(edits)
         if (edits.length === 0){
             return null;
         }
