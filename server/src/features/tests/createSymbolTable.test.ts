@@ -3,7 +3,6 @@ import { createSymbolTable, TamarinSymbolTable } from '../../symbol_table/create
 import { DeclarationType } from '../../symbol_table/tamarinTypes';
 import * as Parser from "web-tree-sitter";
 import * as path from 'path';
-import * as  fs from 'fs';
 
 let parser: Parser;
 
@@ -11,8 +10,7 @@ beforeAll(async () => {
     await Parser.init();
     parser = new Parser();
     const langPath = path.resolve(__dirname, '../../../out/grammar/tree-sitter-tamarin/tree-sitter-spthy.wasm'); 
-    const wasmBuffer = fs.readFileSync(langPath);
-    const Tamarin = await Parser.Language.load(wasmBuffer);
+    const Tamarin = await Parser.Language.load(langPath);
     parser.setLanguage(Tamarin);
 });
 
