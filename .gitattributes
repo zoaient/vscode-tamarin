@@ -1,1 +1,1 @@
-*.wasm binary
+*.wasm -text -eol -crlf
