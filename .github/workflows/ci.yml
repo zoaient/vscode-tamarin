@@ -19,6 +19,7 @@ jobs:
         with:
           submodules: true
           lfs: true 
+          autocrlf : 'input'
        
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
