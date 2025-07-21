@@ -34,6 +34,7 @@ export class AnalysisManager{
         console.log("Symbol table created for:", document.uri);
         console.log("Number of symbols found:", symbolTable.getSymbols().length);
         console.log("Wellformedness diagnostics:", wellformednessDiagnostics.length);
+        console.log("Symbol table", symbolTable);
         const allDiagnostics = [
             ...syntaxDiagnostics,
             ...wellformednessDiagnostics,
