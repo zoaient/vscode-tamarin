@@ -5,13 +5,19 @@ import * as Parser from "web-tree-sitter";
 import {TamarinSymbolTable,createSymbolTable} from "./symbol_table/create_symbol_table";
 import { checks_with_table } from "./features/checks/index";
 import { DeclarationType} from "./symbol_table/tamarinTypes";
-//TODO : REFACTORING
+import * as fs from 'fs';
+import * as path from 'path';
+import { URI } from 'vscode-uri'; 
+
+
 export class AnalysisManager{
     private parser: Parser|undefined;
-    private symbolTable: Map<string, TamarinSymbolTable>;
+    private documentSymbolTables: Map<string, TamarinSymbolTable>;
+    private visitedFiles: Set<string> 
 
     constructor() {
-        this.symbolTable = new Map<string, TamarinSymbolTable>();
+        this.documentSymbolTables = new Map<string, TamarinSymbolTable>();
+        this.visitedFiles = new Set<string>();
     }
 
     public async initParser(parserPath: string): Promise<void> {
@@ -29,8 +35,13 @@ export class AnalysisManager{
         const tree =  this.parser.parse(document.getText());
         const {diagnostics: syntaxDiagnostics } = await detect_errors(tree.rootNode,document);
         const { symbolTable, diags: symbolTableChecks } = await createSymbolTable(tree.rootNode, document);
-        this.symbolTable.set(document.uri, symbolTable);
-        const wellformednessDiagnostics = await checks_with_table(symbolTable, document, tree.rootNode);
+        this.visitedFiles.add(document.uri);
+        this.documentSymbolTables.set(document.uri, symbolTable);
+        if (this.documentSymbolTables.get(document.uri)?.getIncludes) {
+            await this.AnalyseImports(document)
+        }
+        // checks with table
+        const wellformednessDiagnostics = await checks_with_table(symbolTable, document, tree.rootNode,this.documentSymbolTables);
         console.log("Symbol table created for:", document.uri);
         console.log("Number of symbols found:", symbolTable.getSymbols().length);
         console.log("Wellformedness diagnostics:", wellformednessDiagnostics.length);
@@ -42,12 +53,47 @@ export class AnalysisManager{
         ];
         return allDiagnostics;
     }
+
+    public clearCache(): void {
+        this.documentSymbolTables.clear();
+    }
+    
+    public async AnalyseImports(document : TextDocument): Promise<void> {
+        const currentDocumentUri = document.uri;
+        const currentDocumentFsPath = URI.parse(currentDocumentUri).fsPath;
+        const currentDocumentDir = path.dirname(currentDocumentFsPath);
+        const include_path= this.documentSymbolTables.get(document.uri)?.getIncludes();
+        for (const relativeIncludePath of include_path || []) {
+            const absoluteFilePath = path.resolve(currentDocumentDir, relativeIncludePath);
+            if (this.visitedFiles.has(absoluteFilePath)) {
+                console.log(`Document ${absoluteFilePath} has already been visited. Skipping import analysis.`);
+            return;
+            }
+            this.visitedFiles.add(absoluteFilePath);
+            try{
+                if (!this.parser) {
+                    throw new Error("Parser not initialized");
+                }
+                const fileContent = fs.readFileSync(absoluteFilePath, 'utf8');
+                const tree = this.parser.parse(fileContent);
+                const importedFileUri = URI.file(absoluteFilePath).toString();
+                const importedDocument = TextDocument.create(importedFileUri, 'tamarin', 1, fileContent);
+                const { symbolTable} = await createSymbolTable(tree.rootNode, importedDocument);
+                console.error(`[AnalysisManager] Analyzing imported file: ${absoluteFilePath}`);
+                this.documentSymbolTables.set(absoluteFilePath, symbolTable);
+                console.log("Symbol table for imported file", symbolTable);
+                await this.AnalyseImports(importedDocument);
+            } catch (error) {
+                console.error(`[AnalysisManager] Failed to read or analyze imported file ${absoluteFilePath}: ${error}`);
+            }
+        }
+    }
     //goto
     public getDefinition(document: TextDocument, position: Position): Location | null {
         if(!this.parser) {
             throw new Error("Parser not initialized");
         }
-        const table = this.symbolTable.get(document.uri);
+        const table = this.documentSymbolTables.get(document.uri);
         if (!table) {
             console.error(`No symbol table found for document: ${document.uri}`);
             return null;
@@ -75,11 +121,11 @@ export class AnalysisManager{
 
     public handleDocumentClose(uri: string): void {
         console.log(`Document closed: ${uri}. Cleaning up symbol table.`);
-        this.symbolTable.delete(uri);
+        this.documentSymbolTables.delete(uri);
     }
     //rename
     public handleRenameRequest(document: TextDocument, position: Position, newName: string): WorkspaceEdit | null {
-        const table = this.symbolTable.get(document.uri);
+        const table = this.documentSymbolTables.get(document.uri);
         if (!table) return null
         if (!this.parser) {
             throw new Error("Parser not initialized");
