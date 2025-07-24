@@ -55,11 +55,9 @@ class SymbolTableVisitor{
         this.context = context
     }
     private visitcounter : number = 0; // Used to add fst snd and pair symbols only once
-    
     protected defaultResult(): TamarinSymbolTable {
         return this.symbolTable;
     }
-
     /* Method that builds the symbol table adding every symbols while visiting the AST*/
     public async visit(root : Parser.SyntaxNode, document: TextDocument, diags: Diagnostic[]): Promise<TamarinSymbolTable>{
         //Include default functions but the neither the nodes or the name range are correct
@@ -215,7 +213,6 @@ class SymbolTableVisitor{
         }
         return this.symbolTable
     }
-
     //Method used to register vars found by find variables function 
     private register_vars_rule(node :Parser.SyntaxNode, type : DeclarationType, document : TextDocument, root : Parser.SyntaxNode){
         const vars: Parser.SyntaxNode[] = find_variables(node);
