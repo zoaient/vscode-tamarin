@@ -1,4 +1,3 @@
-// Dans server/src/server.ts
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import {
     createConnection,
