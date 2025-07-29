@@ -11,23 +11,33 @@ import { URI } from 'vscode-uri';
 
 
 export class AnalysisManager{
-    private parser: Parser|undefined;
+    private spthyParser: Parser|undefined;
+    private splibParser: Parser|undefined;
     private documentSymbolTables: Map<string, TamarinSymbolTable>;
 
     constructor() {
         this.documentSymbolTables = new Map<string, TamarinSymbolTable>();
     }
 
-    public async initParser(parserPath: string): Promise<void> {
+    public async initParsers(SpthyParserPath: string, SplibParserPath: string): Promise<void> {
         await Parser.init();
-        this.parser = new Parser();
-        const Tamarin = await Parser.Language.load(parserPath);
-        this.parser.setLanguage(Tamarin);
-        console.log("Parser initialized with Tamarin language.");
+
+        this.spthyParser = new Parser();
+        const spthyLang = await Parser.Language.load(SpthyParserPath);
+        this.spthyParser.setLanguage(spthyLang);
+        console.log("SPTHY Parser initialized with Tamarin language.");
+    
+        this.splibParser = new Parser();
+        const splibLang = await Parser.Language.load(SplibParserPath);
+        this.splibParser.setLanguage(splibLang);
+        console.log("SPLIB Parser initialized with Tamarin language.");
+
     }
+
+
     //error and warning display
     public async AnalyseDocument(document: TextDocument): Promise<Diagnostic[]> {
-        if (!this.parser) {
+        if (!this.spthyParser || !this.splibParser) {
             throw new Error("Parser not initialized");
         }
         const newSymbolTables = new Map<string, TamarinSymbolTable>();
@@ -36,12 +46,21 @@ export class AnalysisManager{
         this.documentSymbolTables = newSymbolTables;
         console.log(`[AnalysisManager] Cache updated. Total files analyzed: ${this.documentSymbolTables.size}`);
 
+        const parserToUse: Parser = document.uri.endsWith('.splib')
+            ? this.splibParser
+            : this.spthyParser;
 
-        const tree =  this.parser.parse(document.getText());
+        if (!parserToUse) {
+            throw new Error(`No parser available for URI: ${document.uri}`);
+        }
+
+        const tree = parserToUse.parse(document.getText());
+
         const {diagnostics: syntaxDiagnostics } = await detect_errors(tree.rootNode,document);
         const { symbolTable, diags: symbolTableChecks } = await createSymbolTable(tree.rootNode, document);
         this.documentSymbolTables.set(document.uri, symbolTable);
         // checks with table
+
         const wellformednessDiagnostics = await checks_with_table(symbolTable, document, tree.rootNode,this.documentSymbolTables);
         //console.log("Symbol table created for:", document.uri);
         console.log("Number of symbols found:", symbolTable.getSymbols().length);
@@ -63,7 +82,7 @@ export class AnalysisManager{
         content: string | undefined, 
         tablesForThisPass: Map<string, TamarinSymbolTable>, 
         visitedInThisPass: Set<string>): Promise<void> {
-        if (!this.parser) return;
+        if (!this.spthyParser) return;
         if (visitedInThisPass.has(uri)) {
             return;
         }
@@ -80,7 +99,7 @@ export class AnalysisManager{
         }
 
         const doc = TextDocument.create(uri, 'tamarin', 1, fileContent);
-        const tree = this.parser.parse(doc.getText());
+        const tree = this.spthyParser.parse(doc.getText());
         const { symbolTable } = await createSymbolTable(tree.rootNode, doc);
         tablesForThisPass.set(uri, symbolTable);
         const includePaths = symbolTable.getIncludes() || [];
@@ -93,7 +112,7 @@ export class AnalysisManager{
     }
     //goto
     public getDefinition(document: TextDocument, position: Position): Location | null {
-        if(!this.parser) {
+        if(!this.spthyParser) {
             throw new Error("Parser not initialized");
         }
         const table = this.documentSymbolTables.get(document.uri);
@@ -101,7 +120,7 @@ export class AnalysisManager{
             console.error(`No symbol table found for document: ${document.uri}`);
             return null;
         }
-        const tree= this.parser.parse(document.getText());
+        const tree= this.spthyParser.parse(document.getText());
         const point = {row: position.line, column: position.character};
         const nodeAtcursor = tree.rootNode.descendantForPosition(point);
         if (!nodeAtcursor) {
@@ -130,10 +149,10 @@ export class AnalysisManager{
     public handleRenameRequest(document: TextDocument, position: Position, newName: string): WorkspaceEdit | null {
         const table = this.documentSymbolTables.get(document.uri);
         if (!table) return null
-        if (!this.parser) {
+        if (!this.spthyParser) {
             throw new Error("Parser not initialized");
         }
-        const tree = this.parser.parse(document.getText());
+        const tree = this.spthyParser.parse(document.getText());
         const point = {row: position.line, column: position.character};
         const nodeAtCursor = tree.rootNode.descendantForPosition(point);
         if (!nodeAtCursor) {

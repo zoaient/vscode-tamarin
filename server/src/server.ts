@@ -22,9 +22,10 @@ let analysisManager: AnalysisManager;
 
 
 connection.onInitialize(async (params: InitializeParams) => {
-    const parserPath = params.initializationOptions.parserPath;
+    const SpthyParserPath = params.initializationOptions.SpthyParserPath;
+    const SplibParserPath = params.initializationOptions.SplibParserPath;
     analysisManager = new AnalysisManager();
-    await analysisManager.initParser(parserPath)
+    await analysisManager.initParsers(SpthyParserPath,SplibParserPath)
     console.error('[Server] Received "initialize" request from client.');
     const capabilities: ServerCapabilities = {
         textDocumentSync: TextDocumentSyncKind.Full, 
