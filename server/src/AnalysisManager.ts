@@ -13,11 +13,9 @@ import { URI } from 'vscode-uri';
 export class AnalysisManager{
     private parser: Parser|undefined;
     private documentSymbolTables: Map<string, TamarinSymbolTable>;
-    private visitedFiles: Set<string> 
 
     constructor() {
         this.documentSymbolTables = new Map<string, TamarinSymbolTable>();
-        this.visitedFiles = new Set<string>();
     }
 
     public async initParser(parserPath: string): Promise<void> {
@@ -32,20 +30,23 @@ export class AnalysisManager{
         if (!this.parser) {
             throw new Error("Parser not initialized");
         }
+        const newSymbolTables = new Map<string, TamarinSymbolTable>();
+        const visitedUrisInThisPass = new Set<string>();
+        await this.AnalyseImports(document.uri, document.getText(), newSymbolTables, visitedUrisInThisPass);
+        this.documentSymbolTables = newSymbolTables;
+        console.log(`[AnalysisManager] Cache updated. Total files analyzed: ${this.documentSymbolTables.size}`);
+
+
         const tree =  this.parser.parse(document.getText());
         const {diagnostics: syntaxDiagnostics } = await detect_errors(tree.rootNode,document);
         const { symbolTable, diags: symbolTableChecks } = await createSymbolTable(tree.rootNode, document);
-        this.visitedFiles.add(document.uri);
         this.documentSymbolTables.set(document.uri, symbolTable);
-        if (this.documentSymbolTables.get(document.uri)?.getIncludes) {
-            await this.AnalyseImports(document)
-        }
         // checks with table
         const wellformednessDiagnostics = await checks_with_table(symbolTable, document, tree.rootNode,this.documentSymbolTables);
-        console.log("Symbol table created for:", document.uri);
+        //console.log("Symbol table created for:", document.uri);
         console.log("Number of symbols found:", symbolTable.getSymbols().length);
         console.log("Wellformedness diagnostics:", wellformednessDiagnostics.length);
-        console.log("Symbol table", symbolTable);
+        //console.log("Symbol table", symbolTable);
         const allDiagnostics = [
             ...syntaxDiagnostics,
             ...wellformednessDiagnostics,
@@ -58,34 +59,36 @@ export class AnalysisManager{
         this.documentSymbolTables.clear();
     }
     
-    public async AnalyseImports(document : TextDocument): Promise<void> {
-        const currentDocumentUri = document.uri;
-        const currentDocumentFsPath = URI.parse(currentDocumentUri).fsPath;
-        const currentDocumentDir = path.dirname(currentDocumentFsPath);
-        const include_path= this.documentSymbolTables.get(document.uri)?.getIncludes();
-        for (const relativeIncludePath of include_path || []) {
-            const absoluteFilePath = path.resolve(currentDocumentDir, relativeIncludePath);
-            if (this.visitedFiles.has(absoluteFilePath)) {
-                console.log(`Document ${absoluteFilePath} has already been visited. Skipping import analysis.`);
+    private async AnalyseImports(uri: string, 
+        content: string | undefined, 
+        tablesForThisPass: Map<string, TamarinSymbolTable>, 
+        visitedInThisPass: Set<string>): Promise<void> {
+        if (!this.parser) return;
+        if (visitedInThisPass.has(uri)) {
             return;
-            }
-            this.visitedFiles.add(absoluteFilePath);
-            try{
-                if (!this.parser) {
-                    throw new Error("Parser not initialized");
-                }
-                const fileContent = fs.readFileSync(absoluteFilePath, 'utf8');
-                const tree = this.parser.parse(fileContent);
-                const importedFileUri = URI.file(absoluteFilePath).toString();
-                const importedDocument = TextDocument.create(importedFileUri, 'tamarin', 1, fileContent);
-                const { symbolTable} = await createSymbolTable(tree.rootNode, importedDocument);
-                console.error(`[AnalysisManager] Analyzing imported file: ${absoluteFilePath}`);
-                this.documentSymbolTables.set(absoluteFilePath, symbolTable);
-                console.log("Symbol table for imported file", symbolTable);
-                await this.AnalyseImports(importedDocument);
+        }
+        visitedInThisPass.add(uri);
+        let fileContent = content;
+        if (fileContent === undefined) {
+            try {
+                const fsPath = URI.parse(uri).fsPath;
+                fileContent = fs.readFileSync(fsPath, 'utf8');
             } catch (error) {
-                console.error(`[AnalysisManager] Failed to read or analyze imported file ${absoluteFilePath}: ${error}`);
+                console.error(`[AnalysisManager] Failed to read imported file ${uri}: ${error}`);
+                return;
             }
+        }
+
+        const doc = TextDocument.create(uri, 'tamarin', 1, fileContent);
+        const tree = this.parser.parse(doc.getText());
+        const { symbolTable } = await createSymbolTable(tree.rootNode, doc);
+        tablesForThisPass.set(uri, symbolTable);
+        const includePaths = symbolTable.getIncludes() || [];
+        const currentDir = path.dirname(URI.parse(uri).fsPath);
+        for (const relativePath of includePaths) {
+            const absolutePath = path.resolve(currentDir, relativePath);
+            const importedUri = URI.file(absolutePath).toString();
+            await this.AnalyseImports(importedUri, undefined, tablesForThisPass, visitedInThisPass);
         }
     }
     //goto
