@@ -1,7 +1,7 @@
 # Using tree-sitter in the Tamarin plugin
-
-First you will need to go to server/grammar/tree-sitter-tamarin folder.
-```cd server/grammar/tree-sitter-tamarin```
+//TODO : update documentation
+First you will need to go to server/grammar/.
+```cd server/grammar/```
 
 ## Installing dependencies
 ### On macOS

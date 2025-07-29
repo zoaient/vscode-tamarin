@@ -9,7 +9,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { URI } from 'vscode-uri'; 
 
-
 export class AnalysisManager{
     private spthyParser: Parser|undefined;
     private splibParser: Parser|undefined;
@@ -81,8 +80,9 @@ export class AnalysisManager{
     private async AnalyseImports(uri: string, 
         content: string | undefined, 
         tablesForThisPass: Map<string, TamarinSymbolTable>, 
-        visitedInThisPass: Set<string>): Promise<void> {
-        if (!this.spthyParser) return;
+        visitedInThisPass: Set<string>,
+        ): Promise<void> {
+        if (!this.spthyParser || !this.splibParser) return;
         if (visitedInThisPass.has(uri)) {
             return;
         }
@@ -99,8 +99,8 @@ export class AnalysisManager{
         }
 
         const doc = TextDocument.create(uri, 'tamarin', 1, fileContent);
-        const tree = this.spthyParser.parse(doc.getText());
-        const { symbolTable } = await createSymbolTable(tree.rootNode, doc);
+        const tree = this.splibParser.parse(doc.getText());
+        const { symbolTable} = await createSymbolTable(tree.rootNode, doc);
         tablesForThisPass.set(uri, symbolTable);
         const includePaths = symbolTable.getIncludes() || [];
         const currentDir = path.dirname(URI.parse(uri).fsPath);
