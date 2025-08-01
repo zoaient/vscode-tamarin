@@ -23,7 +23,7 @@ Features:
     This is a subset of the checks performed by Tamarin. For more details on Tamarin's wellformedness checks, see the corresponding [Tamarin Prover manual section](https://tamarin-prover.com/manual/master/book/010_modeling-issues.html).
 - Implements Language Server Protocol
 - Adds 62 unitary tests 
-- Adds recursive analysis
+- Adds recursive analysis with .splib files
 
 - Use right click and ```Rename``` on an indentifier to rename all occurences of it inside a rule or a lemma.
 - Use right click and ```Search Definition``` on facts or function names and press ```CTRL```+```ALT```+```n``` to navigate through all occurences.

@@ -28,3 +28,6 @@ The server folder is separated into various parts required for plugin operation.
 - ``src/extension.ts``: This is the file used to launch the extension. It contains the ``activate`` function, which contains all the tasks performed when the plugin is activated.
 -  ```src/run_shortcut.ts```: This file provides a shortcut to launch tamarin in normal or auto sources mode in the bottom right-hand corner of the editor.
 - ```src/languageServer.ts``` : This file setup the lsp.
+
+## spthy and splib files.
+spthy is the default format for Tamarin files. However, if you want to use the import functionality you will have to add splib files. splib files are the same as spthy files but without the theory name, "begin" and "end". other files that are registered as tamarin files are parsed as spthy files.
